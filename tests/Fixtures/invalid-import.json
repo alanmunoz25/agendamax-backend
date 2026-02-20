@@ -1,0 +1,12 @@
+{
+    "categories": [
+        {
+            "name": "Valid Category",
+            "services": [
+                {
+                    "name": "Missing Duration and Price"
+                }
+            ]
+        }
+    ]
+}

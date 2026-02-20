@@ -1,0 +1,58 @@
+{
+    "categories": [
+        {
+            "name": "Cabello",
+            "description": "Servicios de cabello",
+            "subcategories": [
+                {
+                    "name": "Cortes",
+                    "description": "Servicios de corte",
+                    "services": [
+                        {
+                            "name": "Corte Mujer",
+                            "description": "Corte profesional y estilo",
+                            "duration": 45,
+                            "price": 65.00
+                        },
+                        {
+                            "name": "Corte Hombre",
+                            "description": "Corte clasico masculino",
+                            "duration": 30,
+                            "price": 35.00
+                        }
+                    ]
+                },
+                {
+                    "name": "Color",
+                    "description": "Servicios de coloracion",
+                    "services": [
+                        {
+                            "name": "Tinte Completo",
+                            "description": "Coloracion completa",
+                            "duration": 90,
+                            "price": 120.00
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Unas",
+            "description": "Servicios de unas",
+            "services": [
+                {
+                    "name": "Manicure",
+                    "description": "Cuidado de unas clasico",
+                    "duration": 45,
+                    "price": 35.00
+                },
+                {
+                    "name": "Pedicure",
+                    "description": "Cuidado de pies completo",
+                    "duration": 60,
+                    "price": 45.00
+                }
+            ]
+        }
+    ]
+}
