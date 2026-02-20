@@ -10,7 +10,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (DB::getDriverName() === 'mysql') {
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb'])) {
             DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('super_admin', 'business_admin', 'employee', 'client', 'lead') DEFAULT 'client'");
         }
         // SQLite: no-op — text columns accept any value
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (DB::getDriverName() === 'mysql') {
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb'])) {
             // First update any leads back to client
             DB::table('users')->where('role', 'lead')->update(['role' => 'client']);
             DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('super_admin', 'business_admin', 'employee', 'client') DEFAULT 'client'");

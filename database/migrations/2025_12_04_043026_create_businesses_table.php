@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->string('logo_url')->nullable();
-            $table->string('invitation_code', 8)->unique();
+            $table->string('invitation_code', 20)->unique();
             $table->unsignedInteger('loyalty_stamps_required')->default(10);
             $table->text('loyalty_reward_description')->nullable();
             $table->string('status')->default('active');
