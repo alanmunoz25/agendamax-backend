@@ -71,7 +71,7 @@ class ServicePriceListSeeder extends Seeder
         $this->command->info("Importing price list for: {$business->name} (ID: {$business->id})");
         $this->command->newLine();
 
-        $csvPath = database_path('seeders/data/price-structure.csv');
+        $csvPath = database_path('seeders/data/price-structure-services-v1.csv');
 
         if (! file_exists($csvPath)) {
             $this->command->error("CSV file not found: {$csvPath}");
@@ -130,7 +130,9 @@ class ServicePriceListSeeder extends Seeder
     /**
      * Parse the CSV file and return cleaned rows.
      *
-     * @return array<int, array{category: string, subcategory: string, name: string, price: float}>
+     * CSV columns: Category, Sub_Category, Category_description, Service_Description, Price
+     *
+     * @return array<int, array{category: string, subcategory: string, description: string, name: string, price: float}>
      */
     private function parseCsv(string $path): array
     {
@@ -148,8 +150,8 @@ class ServicePriceListSeeder extends Seeder
         while (($data = fgetcsv($handle)) !== false) {
             $lineNumber++;
 
-            // Skip rows with insufficient columns
-            if (count($data) < 4) {
+            // Skip rows with insufficient columns (need all 5)
+            if (count($data) < 5) {
                 $this->stats['skipped']++;
 
                 continue;
@@ -157,8 +159,9 @@ class ServicePriceListSeeder extends Seeder
 
             $category = $this->fixEncoding(trim($data[0]));
             $subcategory = $this->fixEncoding(trim($data[1]));
-            $serviceName = $this->fixEncoding(trim($data[2]));
-            $priceRaw = trim($data[3]);
+            $description = $this->fixEncoding(trim($data[2]));
+            $serviceName = $this->fixEncoding(trim($data[3]));
+            $priceRaw = trim($data[4]);
 
             // Skip empty service names
             if ($serviceName === '') {
@@ -167,7 +170,7 @@ class ServicePriceListSeeder extends Seeder
                 continue;
             }
 
-            // Skip rows without a price (section headers like "Beauty Face")
+            // Skip rows without a price
             if ($priceRaw === '') {
                 $this->command->warn("  Skipped line {$lineNumber}: \"{$serviceName}\" (no price)");
                 $this->stats['skipped']++;
@@ -181,6 +184,7 @@ class ServicePriceListSeeder extends Seeder
             $rows[] = [
                 'category' => $category,
                 'subcategory' => $subcategory,
+                'description' => $description,
                 'name' => $serviceName,
                 'price' => $price,
             ];
@@ -194,8 +198,8 @@ class ServicePriceListSeeder extends Seeder
     /**
      * Group flat rows into Category → Sub_Category → Services hierarchy.
      *
-     * @param  array<int, array{category: string, subcategory: string, name: string, price: float}>  $rows
-     * @return array<string, array<string, array<int, array{name: string, price: float}>>>
+     * @param  array<int, array{category: string, subcategory: string, description: string, name: string, price: float}>  $rows
+     * @return array<string, array<string, array<int, array{description: string, name: string, price: float}>>>
      */
     private function groupByCategories(array $rows): array
     {
@@ -203,6 +207,7 @@ class ServicePriceListSeeder extends Seeder
 
         foreach ($rows as $row) {
             $grouped[$row['category']][$row['subcategory']][] = [
+                'description' => $row['description'],
                 'name' => $row['name'],
                 'price' => $row['price'],
             ];
@@ -241,20 +246,21 @@ class ServicePriceListSeeder extends Seeder
     /**
      * Create or update a service.
      *
-     * @param  array{name: string, price: float}  $data
+     * @param  array{description: string, name: string, price: float}  $data
      */
     private function upsertService(int $businessId, ServiceCategory $subcategory, ServiceCategory $parentCategory, array $data): void
     {
         $service = Service::withoutGlobalScopes()->updateOrCreate(
             [
                 'business_id' => $businessId,
+                'service_category_id' => $subcategory->id,
                 'name' => $data['name'],
+                'description' => $data['description'],
             ],
             [
                 'price' => $data['price'],
                 'duration' => self::DEFAULT_DURATION,
                 'category' => $parentCategory->name,
-                'service_category_id' => $subcategory->id,
                 'is_active' => true,
             ]
         );
