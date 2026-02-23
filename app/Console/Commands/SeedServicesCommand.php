@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\Business;
+use App\Models\Service;
 use Database\Seeders\ServicePriceListSeeder;
 use Illuminate\Console\Command;
 
@@ -14,7 +15,8 @@ class SeedServicesCommand extends Command
      * @var string
      */
     protected $signature = 'services:seed
-                            {--business-id= : The business ID to import services for (defaults to 2)}';
+                            {--business-id= : The business ID to import services for (defaults to 2)}
+                            {--fresh : Delete existing services for the business before seeding}';
 
     /**
      * @var string
@@ -27,10 +29,30 @@ class SeedServicesCommand extends Command
             ? (int) $this->option('business-id')
             : null;
 
-        if ($businessId !== null && ! Business::find($businessId)) {
+        $business = $businessId !== null ? Business::find($businessId) : null;
+
+        if ($businessId !== null && ! $business) {
             $this->error("Business with ID {$businessId} not found.");
 
             return self::FAILURE;
+        }
+
+        if ($this->option('fresh') && $businessId !== null) {
+            $count = Service::withoutGlobalScopes()
+                ->where('business_id', $businessId)
+                ->count();
+
+            if ($count > 0 && ! $this->confirm("This will delete {$count} existing services for \"{$business->name}\". Continue?")) {
+                $this->info('Aborted.');
+
+                return self::SUCCESS;
+            }
+
+            $deleted = Service::withoutGlobalScopes()
+                ->where('business_id', $businessId)
+                ->delete();
+
+            $this->info("Deleted {$deleted} existing services.");
         }
 
         $seeder = new ServicePriceListSeeder;
