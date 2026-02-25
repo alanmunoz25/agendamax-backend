@@ -27,7 +27,7 @@ class AppointmentController extends Controller
     public function index(): AnonymousResourceCollection
     {
         $appointments = Appointment::where('client_id', Auth::id())
-            ->with(['service', 'employee.user', 'business'])
+            ->with(['service', 'employee.user', 'business', 'services'])
             ->orderBy('scheduled_at', 'desc')
             ->paginate(20);
 
@@ -45,7 +45,7 @@ class AppointmentController extends Controller
                 'client_id' => Auth::id(),
             ]);
 
-            $appointment->load(['service', 'employee.user', 'business']);
+            $appointment->load(['service', 'employee.user', 'business', 'services']);
 
             return response()->json([
                 'message' => 'Appointment created successfully',
@@ -55,7 +55,7 @@ class AppointmentController extends Controller
             Log::error('Failed to create appointment', [
                 'user_id' => Auth::id(),
                 'service_id' => $request->validated('service_id'),
-                'employee_id' => $request->validated('employee_id'),
+                'services' => $request->validated('services'),
                 'scheduled_at' => $request->validated('scheduled_at'),
                 'error' => $e->getMessage(),
             ]);
@@ -72,7 +72,7 @@ class AppointmentController extends Controller
      */
     public function show(int $id): AppointmentResource|JsonResponse
     {
-        $appointment = Appointment::with(['service', 'employee.user', 'business', 'visit'])
+        $appointment = Appointment::with(['service', 'employee.user', 'business', 'visit', 'services'])
             ->findOrFail($id);
 
         if ($appointment->client_id !== Auth::id()) {
