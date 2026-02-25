@@ -8,6 +8,7 @@ use App\Models\Traits\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Appointment extends Model
@@ -69,6 +70,16 @@ class Appointment extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');
+    }
+
+    /**
+     * Get the services for this appointment (multi-service pivot).
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'appointment_services')
+            ->withPivot('employee_id')
+            ->withTimestamps();
     }
 
     /**

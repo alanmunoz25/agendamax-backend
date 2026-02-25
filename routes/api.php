@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\GoogleOAuthController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Api\QrScanController;
 use App\Http\Controllers\Api\ServiceCategoryController;
@@ -54,6 +55,9 @@ Route::prefix('v1')->group(function () {
     // Service Categories (public, by business)
     Route::get('/businesses/{businessId}/categories', [ServiceCategoryController::class, 'index']);
     Route::get('/businesses/{businessId}/categories/{categoryId}', [ServiceCategoryController::class, 'show']);
+
+    // Promotions (public, by business)
+    Route::get('/businesses/{businessId}/promotions', [PromotionController::class, 'index']);
 
     // Availability (public, by business)
     Route::get('/businesses/{businessId}/availability', [BusinessController::class, 'availability']);

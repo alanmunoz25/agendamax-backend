@@ -19,9 +19,11 @@ import {
     Folder,
     LayoutGrid,
     Briefcase,
+    FolderTree,
     Users,
     UserCog,
     Building2,
+    Megaphone,
     QrCode as QrCodeIcon,
     Shield,
 } from 'lucide-react';
@@ -86,6 +88,16 @@ function useNavItems(): NavItem[] {
                     title: 'Services',
                     href: '/services',
                     icon: Briefcase,
+                },
+                {
+                    title: 'Categories',
+                    href: '/service-categories',
+                    icon: FolderTree,
+                },
+                {
+                    title: 'Promotions',
+                    href: '/promotions',
+                    icon: Megaphone,
                 },
                 {
                     title: 'Business',

@@ -166,43 +166,92 @@ export default function ShowAppointment({ appointment, can }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Briefcase className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Service Details</CardTitle>
+                                <CardTitle>
+                                    {appointment.services && appointment.services.length > 1
+                                        ? `Services (${appointment.services.length})`
+                                        : 'Service Details'}
+                                </CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Service
-                                </p>
-                                <p className="mt-1 text-base text-foreground">
-                                    {appointment.service?.name}
-                                </p>
-                                {appointment.service?.category && (
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        {appointment.service.category}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                        Duration
-                                    </p>
-                                    <div className="mt-1 flex items-center gap-1 text-base text-foreground">
-                                        <Clock className="h-4 w-4" />
-                                        {appointment.service?.duration} min
+                            {appointment.services && appointment.services.length > 0 ? (
+                                appointment.services.map((svc, index) => (
+                                    <div
+                                        key={svc.id}
+                                        className={index > 0 ? 'border-t pt-4' : ''}
+                                    >
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">
+                                                Service
+                                            </p>
+                                            <p className="mt-1 text-base text-foreground">
+                                                {svc.name}
+                                            </p>
+                                            {svc.category && (
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    {svc.category}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">
+                                                    Duration
+                                                </p>
+                                                <div className="mt-1 flex items-center gap-1 text-base text-foreground">
+                                                    <Clock className="h-4 w-4" />
+                                                    {svc.duration} min
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">
+                                                    Price
+                                                </p>
+                                                <div className="mt-1 flex items-center gap-1 text-base text-foreground">
+                                                    <DollarSign className="h-4 w-4" />
+                                                    {svc.price}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                        Price
-                                    </p>
-                                    <div className="mt-1 flex items-center gap-1 text-base text-foreground">
-                                        <DollarSign className="h-4 w-4" />
-                                        {appointment.service?.price}
+                                ))
+                            ) : appointment.service ? (
+                                <>
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">
+                                            Service
+                                        </p>
+                                        <p className="mt-1 text-base text-foreground">
+                                            {appointment.service.name}
+                                        </p>
+                                        {appointment.service.category && (
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {appointment.service.category}
+                                            </p>
+                                        )}
                                     </div>
-                                </div>
-                            </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">
+                                                Duration
+                                            </p>
+                                            <div className="mt-1 flex items-center gap-1 text-base text-foreground">
+                                                <Clock className="h-4 w-4" />
+                                                {appointment.service.duration} min
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">
+                                                Price
+                                            </p>
+                                            <div className="mt-1 flex items-center gap-1 text-base text-foreground">
+                                                <DollarSign className="h-4 w-4" />
+                                                {appointment.service.price}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : null}
                         </CardContent>
                     </Card>
 
