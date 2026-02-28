@@ -140,7 +140,7 @@ class AppointmentControllerTest extends TestCase
         $response = $this->postJson('/api/v1/appointments', []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['service_id', 'employee_id', 'scheduled_at']);
+            ->assertJsonValidationErrors(['service_id', 'scheduled_at']);
     }
 
     public function test_client_can_view_their_appointment(): void

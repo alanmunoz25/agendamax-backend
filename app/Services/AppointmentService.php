@@ -54,7 +54,7 @@ class AppointmentService
 
         return [[
             'service_id' => (int) $data['service_id'],
-            'employee_id' => (int) $data['employee_id'],
+            'employee_id' => isset($data['employee_id']) ? (int) $data['employee_id'] : null,
         ]];
     }
 
@@ -320,8 +320,8 @@ class AppointmentService
         $newStart = Carbon::parse($newScheduledAt);
         $newEnd = $newStart->copy()->addMinutes($appointment->service->duration);
 
-        // Check availability at new time
-        if (! $this->checkAvailability($appointment->employee_id, $newStart, $newEnd)) {
+        // Check availability at new time (skip if no employee assigned)
+        if ($appointment->employee_id !== null && ! $this->checkAvailability($appointment->employee_id, $newStart, $newEnd)) {
             throw new \Exception('New time slot not available');
         }
 

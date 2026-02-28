@@ -32,6 +32,8 @@ class User extends Authenticatable
         'role',
         'phone',
         'avatar_url',
+        'birthday_day',
+        'birthday_month',
         'push_token',
         'interested_service_id',
         'notes',
@@ -61,6 +63,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'birthday_day' => 'integer',
+            'birthday_month' => 'integer',
         ];
     }
 

@@ -9,7 +9,7 @@ use App\Http\Requests\UpdateServiceCategoryRequest;
 use App\Models\ServiceCategory;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -70,7 +70,12 @@ class ServiceCategoryController extends Controller
         $this->authorize('create', ServiceCategory::class);
 
         $data = $request->validated();
-        $data['slug'] = Str::slug($data['name']);
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('service-categories', 'public');
+        }
+
+        unset($data['image']);
 
         ServiceCategory::create([
             ...$data,
@@ -89,6 +94,7 @@ class ServiceCategoryController extends Controller
         $this->authorize('update', $serviceCategory);
 
         $serviceCategory->load('parent');
+        $serviceCategory->append('image_url');
 
         // Get root categories excluding self and own children for parent dropdown
         $parentCategories = ServiceCategory::query()
@@ -114,10 +120,16 @@ class ServiceCategoryController extends Controller
 
         $data = $request->validated();
 
-        // Regenerate slug if name changed
-        if (isset($data['name']) && $data['name'] !== $serviceCategory->name) {
-            $data['slug'] = Str::slug($data['name']);
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($serviceCategory->image_path) {
+                Storage::disk('public')->delete($serviceCategory->image_path);
+            }
+
+            $data['image_path'] = $request->file('image')->store('service-categories', 'public');
         }
+
+        unset($data['image']);
 
         $serviceCategory->update($data);
 
@@ -145,7 +157,18 @@ class ServiceCategoryController extends Controller
             ]);
         }
 
-        // Delete children first, then parent
+        // Delete image from storage if exists
+        if ($serviceCategory->image_path) {
+            Storage::disk('public')->delete($serviceCategory->image_path);
+        }
+
+        // Delete children images and then children, then parent
+        foreach ($serviceCategory->children as $child) {
+            if ($child->image_path) {
+                Storage::disk('public')->delete($child->image_path);
+            }
+        }
+
         $serviceCategory->children()->delete();
         $serviceCategory->delete();
 

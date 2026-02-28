@@ -182,6 +182,15 @@ export default function AppointmentsIndex({
             ),
         },
         {
+            key: 'created_at',
+            label: 'Created',
+            render: (appointment) => (
+                <div className="text-sm text-muted-foreground">
+                    {new Date(appointment.created_at).toLocaleDateString()}
+                </div>
+            ),
+        },
+        {
             key: 'status',
             label: 'Status',
             render: (appointment) => (

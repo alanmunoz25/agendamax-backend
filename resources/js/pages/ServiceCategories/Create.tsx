@@ -1,4 +1,4 @@
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState, useRef } from 'react';
 import { router, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -22,24 +22,56 @@ import {
 } from '@/components/ui/select';
 import InputError from '@/components/input-error';
 import type { ServiceCategory } from '@/types/models';
-import { ArrowLeft, FolderTree } from 'lucide-react';
+import { ArrowLeft, FolderTree, Upload, X } from 'lucide-react';
 
 interface Props {
     parentCategories: ServiceCategory[];
 }
 
 export default function CreateServiceCategory({ parentCategories }: Props) {
-    const { data, setData, post, processing, errors, isDirty } = useForm({
+    const { data, setData, post, processing, errors, isDirty } = useForm<{
+        name: string;
+        description: string;
+        image: File | null;
+        parent_id: number | null;
+        sort_order: number;
+        is_active: boolean;
+    }>({
         name: '',
         description: '',
-        parent_id: null as number | null,
+        image: null,
+        parent_id: null,
         sort_order: 0,
         is_active: true,
     });
 
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageChange = (file: File | null) => {
+        setData('image', file);
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => setImagePreview(e.target?.result as string);
+            reader.readAsDataURL(file);
+        } else {
+            setImagePreview(null);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            handleImageChange(file);
+        }
+    };
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post('/service-categories');
+        post('/service-categories', {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -125,6 +157,57 @@ export default function CreateServiceCategory({ parentCategories }: Props) {
                                     Leave empty to create a root category, or select a parent to create a subcategory
                                 </p>
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Category Image */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Category Image</CardTitle>
+                            <CardDescription>Upload a JPG, PNG, or WebP image (max 2MB)</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {imagePreview ? (
+                                <div className="relative">
+                                    <img
+                                        src={imagePreview}
+                                        alt="Preview"
+                                        className="h-48 w-full rounded-lg border object-contain"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="absolute right-2 top-2"
+                                        onClick={() => handleImageChange(null)}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 transition-colors hover:border-muted-foreground/50"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={handleDrop}
+                                >
+                                    <Upload className="mb-4 h-10 w-10 text-muted-foreground/50" />
+                                    <p className="text-sm font-medium text-muted-foreground">
+                                        Click to upload or drag and drop
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground/75">
+                                        JPG, JPEG, PNG, or WebP (max 2MB)
+                                    </p>
+                                </div>
+                            )}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
+                                className="hidden"
+                                onChange={(e) => handleImageChange(e.target.files?.[0] || null)}
+                            />
+                            <InputError message={errors.image} />
                         </CardContent>
                     </Card>
 
