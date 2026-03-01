@@ -27,6 +27,7 @@ class StoreServiceCategoryRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'description' => ['nullable', 'string', 'max:1000'],
             'parent_id' => ['nullable', 'integer', 'exists:service_categories,id'],
             'sort_order' => ['nullable', 'integer', 'min:0'],

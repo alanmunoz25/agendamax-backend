@@ -87,9 +87,11 @@ class LeadController extends Controller
                     ]);
                 }
 
+                $employeeId = $request->validated('employee_id');
+
                 $appointment = $this->appointmentService->createAppointment([
                     'service_id' => (int) $request->validated('service_id'),
-                    'employee_id' => (int) $request->validated('employee_id'),
+                    'employee_id' => $employeeId !== null ? (int) $employeeId : null,
                     'client_id' => $lead->id,
                     'scheduled_at' => $request->validated('scheduled_at'),
                     'notes' => $request->validated('appointment_notes'),

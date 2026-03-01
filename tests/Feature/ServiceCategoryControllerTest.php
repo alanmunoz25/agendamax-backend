@@ -9,6 +9,8 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ServiceCategoryControllerTest extends TestCase
@@ -361,6 +363,58 @@ class ServiceCategoryControllerTest extends TestCase
         $this->get("/service-categories/{$this->category->id}/edit")->assertRedirect('/login');
         $this->put("/service-categories/{$this->category->id}", [])->assertRedirect('/login');
         $this->delete("/service-categories/{$this->category->id}")->assertRedirect('/login');
+    }
+
+    public function test_can_create_category_with_image(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->actingAs($this->businessAdmin)
+            ->post('/service-categories', [
+                'name' => 'Spa Treatments',
+                'description' => 'Relaxation services',
+                'sort_order' => 1,
+                'is_active' => true,
+                'image' => UploadedFile::fake()->image('spa.jpg', 400, 400),
+            ]);
+
+        $response->assertRedirect('/service-categories');
+
+        $category = ServiceCategory::where('name', 'Spa Treatments')->first();
+        $this->assertNotNull($category);
+        $this->assertNotNull($category->image_path);
+        Storage::disk('public')->assertExists($category->image_path);
+    }
+
+    public function test_can_update_category_image(): void
+    {
+        Storage::fake('public');
+
+        // Upload initial image
+        $this->actingAs($this->businessAdmin)
+            ->post('/service-categories', [
+                'name' => 'With Image',
+                'is_active' => true,
+                'image' => UploadedFile::fake()->image('old.jpg', 400, 400),
+            ]);
+
+        $category = ServiceCategory::where('name', 'With Image')->first();
+        $oldImagePath = $category->image_path;
+        Storage::disk('public')->assertExists($oldImagePath);
+
+        // Update with new image
+        $response = $this->actingAs($this->businessAdmin)
+            ->put("/service-categories/{$category->id}", [
+                'name' => 'With Image',
+                'image' => UploadedFile::fake()->image('new.jpg', 400, 400),
+            ]);
+
+        $response->assertRedirect('/service-categories');
+
+        $category->refresh();
+        $this->assertNotEquals($oldImagePath, $category->image_path);
+        Storage::disk('public')->assertExists($category->image_path);
+        Storage::disk('public')->assertMissing($oldImagePath);
     }
 
     public function test_user_without_business_cannot_access_category_routes(): void

@@ -36,13 +36,19 @@ export default function EditAppointment({
     services,
     statuses,
 }: Props) {
-    const { data, setData, put, processing, errors, isDirty } = useForm({
-        service_id: appointment.service_id?.toString() || '',
-        employee_id: appointment.employee_id?.toString() || '',
-        scheduled_at: appointment.scheduled_at || '',
-        status: appointment.status || 'pending',
-        notes: appointment.notes || '',
-    });
+    const { data, setData, put, processing, errors, isDirty, transform } =
+        useForm({
+            service_id: appointment.service_id?.toString() || '',
+            employee_id: appointment.employee_id?.toString() || 'none',
+            scheduled_at: appointment.scheduled_at || '',
+            status: appointment.status || 'pending',
+            notes: appointment.notes || '',
+        });
+
+    transform((data) => ({
+        ...data,
+        employee_id: data.employee_id === 'none' ? '' : data.employee_id,
+    }));
 
     const [selectedService, setSelectedService] = useState<Service | null>(
         appointment.service || null
@@ -230,6 +236,9 @@ export default function EditAppointment({
                                         <SelectValue placeholder="Select an employee" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="none">
+                                            Sin preferencia
+                                        </SelectItem>
                                         {employees.map((employee) => (
                                             <SelectItem
                                                 key={employee.id}

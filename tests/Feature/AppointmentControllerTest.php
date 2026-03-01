@@ -405,15 +405,25 @@ class AppointmentControllerTest extends TestCase
         $response->assertSessionHasErrors(['service_id']);
     }
 
-    public function test_appointment_requires_employee_id(): void
+    public function test_can_create_appointment_without_employee(): void
     {
         $response = $this->actingAs($this->businessAdmin)
             ->post('/appointments', [
+                'client_id' => $this->client->id,
                 'service_id' => $this->service->id,
-                'scheduled_at' => now()->addDay()->toIso8601String(),
+                'scheduled_at' => now()->addDays(5)->toIso8601String(),
+                'notes' => 'No employee preference',
             ]);
 
-        $response->assertSessionHasErrors(['employee_id']);
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('appointments', [
+            'business_id' => $this->business->id,
+            'client_id' => $this->client->id,
+            'service_id' => $this->service->id,
+            'employee_id' => null,
+            'notes' => 'No employee preference',
+        ]);
     }
 
     public function test_appointment_requires_future_scheduled_at(): void

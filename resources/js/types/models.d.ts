@@ -39,6 +39,8 @@ export interface ServiceCategory {
     created_at: string;
     updated_at: string;
     slug?: string | null;
+    image_path?: string | null;
+    image_url?: string | null;
     // Relationships
     parent?: ServiceCategory;
     children?: ServiceCategory[];
@@ -209,6 +211,8 @@ export interface User {
     name: string;
     email: string;
     phone: string | null;
+    birthday_day: number | null;
+    birthday_month: number | null;
     role: 'super_admin' | 'business_admin' | 'employee' | 'client' | 'lead';
     avatar?: string;
     email_verified_at: string | null;
@@ -327,4 +331,6 @@ export interface ClientFormData {
     name: string;
     email: string;
     phone: string | null;
+    birthday_day: number | null;
+    birthday_month: number | null;
 }

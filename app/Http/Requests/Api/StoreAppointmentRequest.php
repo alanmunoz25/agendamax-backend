@@ -25,7 +25,7 @@ class StoreAppointmentRequest extends FormRequest
     {
         return [
             'service_id' => ['required_without:services', 'integer', 'exists:services,id'],
-            'employee_id' => ['required_without:services', 'integer', 'exists:employees,id'],
+            'employee_id' => ['nullable', 'integer', 'exists:employees,id'],
             'services' => ['required_without:service_id', 'array', 'min:1'],
             'services.*.service_id' => ['required', 'integer', 'exists:services,id'],
             'services.*.employee_id' => ['nullable', 'integer', 'exists:employees,id'],
@@ -44,7 +44,6 @@ class StoreAppointmentRequest extends FormRequest
         return [
             'service_id.required_without' => 'Please provide either a service_id or a services array.',
             'service_id.exists' => 'The selected service does not exist.',
-            'employee_id.required_without' => 'Please provide either an employee_id or a services array.',
             'employee_id.exists' => 'The selected employee does not exist.',
             'services.required_without' => 'Please provide either a services array or a service_id.',
             'services.min' => 'At least one service must be selected.',
