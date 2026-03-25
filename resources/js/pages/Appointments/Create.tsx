@@ -35,13 +35,19 @@ export default function CreateAppointment({
     services,
     clients,
 }: Props) {
-    const { data, setData, post, processing, errors, isDirty } = useForm({
-        client_id: '',
-        service_id: '',
-        employee_id: '',
-        scheduled_at: '',
-        notes: '',
-    });
+    const { data, setData, post, processing, errors, isDirty, transform } =
+        useForm({
+            client_id: '',
+            service_id: '',
+            employee_id: '',
+            scheduled_at: '',
+            notes: '',
+        });
+
+    transform((data) => ({
+        ...data,
+        employee_id: data.employee_id === 'none' ? '' : data.employee_id,
+    }));
 
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
@@ -219,7 +225,7 @@ export default function CreateAppointment({
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="employee_id" required>
+                                <Label htmlFor="employee_id">
                                     Employee
                                 </Label>
                                 <Select
@@ -232,6 +238,9 @@ export default function CreateAppointment({
                                         <SelectValue placeholder="Select an employee" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="none">
+                                            Sin preferencia
+                                        </SelectItem>
                                         {employees.map((employee) => (
                                             <SelectItem
                                                 key={employee.id}

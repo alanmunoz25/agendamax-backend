@@ -6,7 +6,9 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\QrCodeController;
+use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +39,12 @@ Route::middleware(['auth', 'verified', 'business'])->group(function () {
 
     // Services Management
     Route::resource('services', ServiceController::class);
+
+    // Service Categories Management
+    Route::resource('service-categories', ServiceCategoryController::class)->except(['show']);
+
+    // Promotions Management
+    Route::resource('promotions', PromotionController::class)->except(['show']);
 
     // Employees Management
     Route::resource('employees', EmployeeController::class);

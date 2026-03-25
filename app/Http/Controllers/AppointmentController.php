@@ -192,6 +192,7 @@ class AppointmentController extends Controller
 
         $appointment->load([
             'service',
+            'services',
             'employee.user',
             'employee.services',
             'client',

@@ -164,9 +164,32 @@ class LeadWithAppointmentTest extends TestCase
                 'email',
                 'business_id',
                 'service_id',
-                'employee_id',
                 'scheduled_at',
             ]);
+    }
+
+    public function test_creates_lead_and_appointment_without_employee(): void
+    {
+        $scheduledAt = Carbon::tomorrow()->setTime(14, 0);
+
+        $response = $this->postJson('/api/v1/leads/with-appointment', [
+            'name' => 'No Pref User',
+            'email' => 'nopref@example.com',
+            'business_id' => $this->business->id,
+            'source' => 'appointment_form',
+            'service_id' => $this->service->id,
+            'scheduled_at' => $scheduledAt->toIso8601String(),
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('lead.email', 'nopref@example.com')
+            ->assertJsonPath('appointment.status', 'pending');
+
+        $this->assertDatabaseHas('appointments', [
+            'service_id' => $this->service->id,
+            'employee_id' => null,
+            'status' => 'pending',
+        ]);
     }
 
     public function test_fails_when_employee_cannot_provide_service(): void
@@ -187,8 +210,8 @@ class LeadWithAppointmentTest extends TestCase
             'scheduled_at' => $scheduledAt->toIso8601String(),
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonPath('error', 'Employee cannot provide this service');
+        $response->assertStatus(422);
+        $this->assertStringContainsString('Employee cannot provide service', $response->json('error'));
     }
 
     public function test_fails_when_time_slot_unavailable(): void
@@ -216,8 +239,8 @@ class LeadWithAppointmentTest extends TestCase
             'scheduled_at' => $scheduledAt->toIso8601String(),
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonPath('error', 'Time slot not available');
+        $response->assertStatus(422);
+        $this->assertStringContainsString('Time slot not available', $response->json('error'));
     }
 
     public function test_transaction_rollback_lead_not_created_if_appointment_fails(): void

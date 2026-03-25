@@ -38,10 +38,16 @@ export interface ServiceCategory {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+    slug?: string | null;
+    image_path?: string | null;
+    image_url?: string | null;
     // Relationships
     parent?: ServiceCategory;
     children?: ServiceCategory[];
     services?: Service[];
+    // Aggregates (from withCount)
+    services_count?: number;
+    children_count?: number;
 }
 
 export interface Service {
@@ -92,12 +98,22 @@ export interface EmployeeSchedule {
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
+export interface AppointmentServicePivot {
+    appointment_id: number;
+    service_id: number;
+    employee_id: number | null;
+}
+
+export interface AppointmentServiceEntry extends Service {
+    pivot: AppointmentServicePivot;
+}
+
 export interface Appointment {
     id: number;
     business_id: number;
     client_id: number;
-    employee_id: number;
-    service_id: number;
+    employee_id: number | null;
+    service_id: number | null;
     scheduled_at: string; // ISO 8601 datetime
     scheduled_until: string; // ISO 8601 datetime
     status: AppointmentStatus;
@@ -110,6 +126,7 @@ export interface Appointment {
     client?: User;
     employee?: Employee;
     service?: Service;
+    services?: AppointmentServiceEntry[];
     business?: Business;
     visit?: Visit;
 }
@@ -175,12 +192,27 @@ export interface Offer {
     business?: Business;
 }
 
+export interface Promotion {
+    id: number;
+    business_id: number;
+    title: string;
+    image_path: string;
+    image_url?: string;
+    url: string | null;
+    expires_at: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface User {
     id: number;
     business_id: number | null;
     name: string;
     email: string;
     phone: string | null;
+    birthday_day: number | null;
+    birthday_month: number | null;
     role: 'super_admin' | 'business_admin' | 'employee' | 'client' | 'lead';
     avatar?: string;
     email_verified_at: string | null;
@@ -299,4 +331,6 @@ export interface ClientFormData {
     name: string;
     email: string;
     phone: string | null;
+    birthday_day: number | null;
+    birthday_month: number | null;
 }

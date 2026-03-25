@@ -54,15 +54,15 @@ class AppointmentCreated implements ShouldBroadcast
                     'name' => $this->appointment->client->name,
                     'email' => $this->appointment->client->email,
                 ],
-                'service' => [
+                'service' => $this->appointment->service ? [
                     'id' => $this->appointment->service->id,
                     'name' => $this->appointment->service->name,
                     'duration' => $this->appointment->service->duration,
-                ],
-                'employee' => [
+                ] : null,
+                'employee' => $this->appointment->employee ? [
                     'id' => $this->appointment->employee->id,
                     'name' => $this->appointment->employee->user->name,
-                ],
+                ] : null,
             ],
         ];
     }

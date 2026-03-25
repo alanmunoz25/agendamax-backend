@@ -27,7 +27,7 @@ class StoreAppointmentRequest extends FormRequest
     {
         return [
             'service_id' => ['required', 'integer', 'exists:services,id'],
-            'employee_id' => ['required', 'integer', 'exists:employees,id'],
+            'employee_id' => ['nullable', 'integer', 'exists:employees,id'],
             'scheduled_at' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:500'],
         ];
@@ -43,7 +43,6 @@ class StoreAppointmentRequest extends FormRequest
         return [
             'service_id.required' => 'Please select a service for the appointment.',
             'service_id.exists' => 'The selected service does not exist.',
-            'employee_id.required' => 'Please select an employee for the appointment.',
             'employee_id.exists' => 'The selected employee does not exist.',
             'scheduled_at.required' => 'Please provide a date and time for the appointment.',
             'scheduled_at.after' => 'The appointment must be scheduled for a future date and time.',

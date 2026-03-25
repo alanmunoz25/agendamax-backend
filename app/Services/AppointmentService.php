@@ -11,6 +11,7 @@ use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
@@ -22,46 +23,117 @@ class AppointmentService
 
     /**
      * Create a new appointment with full validation.
+     * Supports both single-service (legacy) and multi-service formats.
      *
-     * @param  array{service_id: int, employee_id: int, client_id: int, scheduled_at: string, notes?: string}  $data
+     * @param  array<string, mixed>  $data
      *
      * @throws \Exception
      */
     public function createAppointment(array $data): Appointment
     {
-        $service = Service::findOrFail($data['service_id']);
-        $employee = Employee::findOrFail($data['employee_id']);
+        // Normalize single-service format to multi-service format
+        $serviceEntries = $this->normalizeServiceEntries($data);
 
+        return $this->createMultiServiceAppointment($data, $serviceEntries);
+    }
+
+    /**
+     * Normalize input data into a consistent array of service entries.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<int, array{service_id: int, employee_id: int|null}>
+     */
+    private function normalizeServiceEntries(array $data): array
+    {
+        if (isset($data['services']) && is_array($data['services'])) {
+            return array_map(fn (array $entry) => [
+                'service_id' => (int) $entry['service_id'],
+                'employee_id' => isset($entry['employee_id']) ? (int) $entry['employee_id'] : null,
+            ], $data['services']);
+        }
+
+        return [[
+            'service_id' => (int) $data['service_id'],
+            'employee_id' => isset($data['employee_id']) ? (int) $data['employee_id'] : null,
+        ]];
+    }
+
+    /**
+     * Create an appointment with one or more services.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array{service_id: int, employee_id: int|null}>  $serviceEntries
+     *
+     * @throws \Exception
+     */
+    private function createMultiServiceAppointment(array $data, array $serviceEntries): Appointment
+    {
         $scheduledAt = Carbon::parse($data['scheduled_at']);
-        $scheduledUntil = $scheduledAt->copy()->addMinutes($service->duration);
+        $maxDuration = 0;
+        $businessId = null;
 
-        // Validate employee can provide this service
-        if (! $employee->services()->where('services.id', $service->id)->exists()) {
-            throw new \Exception('Employee cannot provide this service');
+        // Validate each service-employee pair and determine duration
+        $pivotData = [];
+        foreach ($serviceEntries as $entry) {
+            $service = Service::findOrFail($entry['service_id']);
+            $businessId ??= $service->business_id;
+
+            if ($entry['employee_id'] !== null) {
+                $employee = Employee::findOrFail($entry['employee_id']);
+
+                if (! $employee->services()->where('services.id', $service->id)->exists()) {
+                    throw new \Exception("Employee cannot provide service: {$service->name}");
+                }
+            }
+
+            $maxDuration = max($maxDuration, $service->duration);
+
+            $pivotData[] = [
+                'service' => $service,
+                'employee_id' => $entry['employee_id'],
+            ];
         }
 
-        // Check availability
-        if (! $this->checkAvailability($employee->id, $scheduledAt, $scheduledUntil)) {
-            throw new \Exception('Time slot not available');
+        $scheduledUntil = $scheduledAt->copy()->addMinutes($maxDuration);
+
+        // Check availability for each employee
+        foreach ($pivotData as $entry) {
+            if ($entry['employee_id'] !== null) {
+                if (! $this->checkAvailability($entry['employee_id'], $scheduledAt, $scheduledUntil)) {
+                    $employee = Employee::find($entry['employee_id']);
+                    throw new \Exception("Time slot not available for employee: {$employee?->user?->name}");
+                }
+            }
         }
 
-        // Create appointment
-        $appointment = Appointment::create([
-            'business_id' => $service->business_id ?? Auth::user()->business_id,
-            'service_id' => $service->id,
-            'employee_id' => $employee->id,
-            'client_id' => $data['client_id'],
-            'scheduled_at' => $scheduledAt,
-            'scheduled_until' => $scheduledUntil,
-            'status' => 'pending',
-            'notes' => $data['notes'] ?? null,
-        ]);
+        // Use first entry for backward-compatible columns
+        $firstEntry = $pivotData[0];
 
-        $appointment->load(['service', 'employee', 'client']);
+        return DB::transaction(function () use ($data, $scheduledAt, $scheduledUntil, $businessId, $firstEntry, $pivotData) {
+            $appointment = Appointment::create([
+                'business_id' => $businessId ?? Auth::user()->business_id,
+                'service_id' => $firstEntry['service']->id,
+                'employee_id' => $firstEntry['employee_id'],
+                'client_id' => $data['client_id'],
+                'scheduled_at' => $scheduledAt,
+                'scheduled_until' => $scheduledUntil,
+                'status' => 'pending',
+                'notes' => $data['notes'] ?? null,
+            ]);
 
-        $this->syncCreate($appointment);
+            // Attach services via pivot table
+            foreach ($pivotData as $entry) {
+                $appointment->services()->attach($entry['service']->id, [
+                    'employee_id' => $entry['employee_id'],
+                ]);
+            }
 
-        return $appointment;
+            $appointment->load(['service', 'employee', 'client', 'services']);
+
+            $this->syncCreate($appointment);
+
+            return $appointment;
+        });
     }
 
     /**
@@ -88,6 +160,7 @@ class AppointmentService
                 'start' => $startTime,
                 'end' => $endTime,
             ]);
+
             return false;
         }
 
@@ -109,6 +182,7 @@ class AppointmentService
                         'busy_start' => $slot['start'],
                         'busy_end' => $slot['end'],
                     ]);
+
                     return false;
                 }
             }
@@ -246,8 +320,8 @@ class AppointmentService
         $newStart = Carbon::parse($newScheduledAt);
         $newEnd = $newStart->copy()->addMinutes($appointment->service->duration);
 
-        // Check availability at new time
-        if (! $this->checkAvailability($appointment->employee_id, $newStart, $newEnd)) {
+        // Check availability at new time (skip if no employee assigned)
+        if ($appointment->employee_id !== null && ! $this->checkAvailability($appointment->employee_id, $newStart, $newEnd)) {
             throw new \Exception('New time slot not available');
         }
 

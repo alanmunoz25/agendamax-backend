@@ -67,11 +67,12 @@ class LeadControllerTest extends TestCase
             ->assertJsonValidationErrors(['business_id']);
     }
 
-    public function test_lead_cannot_duplicate_email_within_business(): void
+    public function test_can_create_multiple_leads_with_same_email(): void
     {
         User::factory()->create([
             'email' => 'existing@example.com',
             'business_id' => $this->business->id,
+            'role' => 'lead',
         ]);
 
         $response = $this->postJson('/api/v1/leads', [
@@ -80,8 +81,9 @@ class LeadControllerTest extends TestCase
             'business_id' => $this->business->id,
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+        $response->assertStatus(201);
+
+        $this->assertDatabaseCount('users', 2);
     }
 
     public function test_lead_can_duplicate_email_across_businesses(): void
@@ -195,6 +197,24 @@ class LeadControllerTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['source']);
+    }
+
+    public function test_can_create_multiple_leads_with_same_phone(): void
+    {
+        User::factory()->create([
+            'phone' => '+1234567890',
+            'business_id' => $this->business->id,
+            'role' => 'lead',
+        ]);
+
+        $response = $this->postJson('/api/v1/leads', [
+            'name' => 'Lead User',
+            'email' => 'unique-email@example.com',
+            'phone' => '+1234567890',
+            'business_id' => $this->business->id,
+        ]);
+
+        $response->assertStatus(201);
     }
 
     public function test_lead_with_all_fields(): void

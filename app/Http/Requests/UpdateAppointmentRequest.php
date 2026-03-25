@@ -28,7 +28,7 @@ class UpdateAppointmentRequest extends FormRequest
     {
         return [
             'service_id' => ['sometimes', 'integer', 'exists:services,id'],
-            'employee_id' => ['sometimes', 'integer', 'exists:employees,id'],
+            'employee_id' => ['sometimes', 'nullable', 'integer', 'exists:employees,id'],
             'scheduled_at' => ['sometimes', 'date', 'after:now'],
             'status' => ['sometimes', 'string', 'in:pending,confirmed,in_progress,completed,cancelled'],
             'notes' => ['nullable', 'string', 'max:500'],
