@@ -188,6 +188,8 @@ class EmailNotificationServiceTest extends TestCase
         $this->assertContains('appointment_reminder', $templates);
         $this->assertContains('appointment_cancelled', $templates);
         $this->assertContains('appointment_rescheduled', $templates);
-        $this->assertCount(4, $templates);
+        $this->assertContains('enrollment_confirmation', $templates);
+        $this->assertContains('payment_received', $templates);
+        $this->assertCount(6, $templates);
     }
 }

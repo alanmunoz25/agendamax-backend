@@ -76,4 +76,20 @@ class Business extends Model
     {
         return $this->hasMany(ServiceCategory::class);
     }
+
+    /**
+     * Get the courses for the business.
+     */
+    public function courses(): HasMany
+    {
+        return $this->hasMany(Course::class);
+    }
+
+    /**
+     * Get the enrollments for the business.
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
 }

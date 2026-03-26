@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BusinessController;
+use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\GoogleOAuthController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\LoyaltyController;
@@ -70,6 +72,14 @@ Route::prefix('v1')->group(function () {
 
     // QR code validation (can be checked without auth)
     Route::post('/visits/check-qr', [VisitController::class, 'checkQR']);
+
+    // Course Catalog (public, by business)
+    Route::get('/businesses/{businessId}/courses', [CourseController::class, 'index']);
+    Route::get('/businesses/{businessId}/courses/{slug}', [CourseController::class, 'show']);
+
+    // Course Enrollment (public)
+    Route::post('/courses/{courseId}/enroll', [EnrollmentController::class, 'store'])
+        ->middleware('throttle:10,1');
 });
 
 // Protected routes (require Sanctum authentication)

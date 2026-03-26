@@ -3,10 +3,13 @@
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CourseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
+use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\PublicCourseController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
@@ -70,6 +73,17 @@ Route::middleware(['auth', 'verified', 'business'])->group(function () {
     Route::get('/qr-codes/create', [QrCodeController::class, 'create'])->name('qr-codes.create');
     Route::post('/qr-codes', [QrCodeController::class, 'store'])->name('qr-codes.store');
     Route::get('/qr-codes/{qrCode}', [QrCodeController::class, 'view'])->name('qr-codes.show');
+
+    // Courses
+    Route::resource('courses', CourseController::class);
+    Route::get('/courses/{course}/enrollments', [EnrollmentController::class, 'index'])->name('courses.enrollments.index');
+    Route::patch('/enrollments/{enrollment}/status', [EnrollmentController::class, 'updateStatus'])->name('enrollments.update-status');
+    Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+    Route::get('/courses/{course}/enrollments/export', [EnrollmentController::class, 'export'])->name('courses.enrollments.export');
 });
+
+// Public course pages (no auth required, SEO)
+Route::get('/{business:slug}/courses', [PublicCourseController::class, 'index'])->name('public.courses.index');
+Route::get('/{business:slug}/courses/{courseSlug}', [PublicCourseController::class, 'show'])->name('public.courses.show');
 
 require __DIR__.'/settings.php';

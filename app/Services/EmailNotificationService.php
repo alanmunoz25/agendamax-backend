@@ -18,6 +18,8 @@ class EmailNotificationService
         'appointment_reminder',
         'appointment_cancelled',
         'appointment_rescheduled',
+        'enrollment_confirmation',
+        'payment_received',
     ];
 
     /**
