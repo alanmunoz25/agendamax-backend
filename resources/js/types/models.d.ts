@@ -334,3 +334,73 @@ export interface ClientFormData {
     birthday_day: number | null;
     birthday_month: number | null;
 }
+
+export interface Course {
+    id: number;
+    business_id: number;
+    title: string;
+    slug: string;
+    description: string;
+    syllabus: string | null;
+    cover_image: string | null;
+    instructor_name: string | null;
+    instructor_bio: string | null;
+    duration_text: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    enrollment_deadline: string | null;
+    schedule_text: string | null;
+    price: number;
+    currency: string;
+    capacity: number | null;
+    modality: 'online' | 'presencial' | 'hybrid';
+    is_active: boolean;
+    is_featured: boolean;
+    meta: Record<string, unknown> | null;
+    created_at: string;
+    updated_at: string;
+    remaining_capacity: number | null;
+    enrollments_count?: number;
+    business?: Business;
+}
+
+export interface Enrollment {
+    id: number;
+    business_id: number;
+    course_id: number;
+    user_id: number | null;
+    customer_name: string;
+    customer_email: string;
+    customer_phone: string | null;
+    status: 'lead' | 'confirmed' | 'cancelled' | 'waitlisted';
+    payment_status: 'pending' | 'paid' | 'refunded' | 'free';
+    payment_provider: string | null;
+    payment_reference: string | null;
+    amount_paid: number | null;
+    enrolled_at: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+    course?: Course;
+    user?: User;
+}
+
+export interface CourseFormData {
+    title: string;
+    description: string;
+    syllabus: string;
+    cover_image: File | null;
+    instructor_name: string;
+    instructor_bio: string;
+    duration_text: string;
+    start_date: string;
+    end_date: string;
+    enrollment_deadline: string;
+    schedule_text: string;
+    price: number;
+    currency: string;
+    capacity: number | string;
+    modality: 'online' | 'presencial' | 'hybrid';
+    is_active: boolean;
+    is_featured: boolean;
+}

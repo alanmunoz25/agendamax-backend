@@ -8,6 +8,8 @@ use App\Mail\AppointmentCancelled;
 use App\Mail\AppointmentConfirmation;
 use App\Mail\AppointmentReminder;
 use App\Mail\AppointmentRescheduled;
+use App\Mail\EnrollmentConfirmation;
+use App\Mail\PaymentReceived;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -89,6 +91,8 @@ class SendEmailNotification implements ShouldQueue
             'appointment_reminder' => new AppointmentReminder($this->data),
             'appointment_cancelled' => new AppointmentCancelled($this->data),
             'appointment_rescheduled' => new AppointmentRescheduled($this->data),
+            'enrollment_confirmation' => new EnrollmentConfirmation($this->data),
+            'payment_received' => new PaymentReceived($this->data),
             default => throw new \InvalidArgumentException("Invalid template: {$this->templateName}"),
         };
     }
