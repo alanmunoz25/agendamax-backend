@@ -15,9 +15,10 @@ use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
-    return redirect('/login');
+    return Inertia::render('homepage');
 })->name('home');
 
 // Routes accessible without business middleware (super_admin + dashboard)
