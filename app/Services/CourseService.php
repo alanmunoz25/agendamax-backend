@@ -30,6 +30,10 @@ class CourseService
             $data['cover_image'] = $data['cover_image']->store('courses', 'public');
         }
 
+        if (isset($data['instructor_image']) && $data['instructor_image'] instanceof \Illuminate\Http\UploadedFile) {
+            $data['instructor_image'] = $data['instructor_image']->store('courses/instructors', 'public');
+        }
+
         return Course::create($data);
     }
 
@@ -53,6 +57,13 @@ class CourseService
                 Storage::disk('public')->delete($course->cover_image);
             }
             $data['cover_image'] = $data['cover_image']->store('courses', 'public');
+        }
+
+        if (isset($data['instructor_image']) && $data['instructor_image'] instanceof \Illuminate\Http\UploadedFile) {
+            if ($course->instructor_image) {
+                Storage::disk('public')->delete($course->instructor_image);
+            }
+            $data['instructor_image'] = $data['instructor_image']->store('courses/instructors', 'public');
         }
 
         $course->update($data);

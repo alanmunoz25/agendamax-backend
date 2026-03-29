@@ -96,6 +96,7 @@ class CourseController extends Controller
         return Inertia::render('Courses/Show', [
             'course' => $course,
             'recentEnrollments' => $enrollments,
+            'businessSlug' => auth()->user()->business->slug ?? '',
             'can' => [
                 'update' => auth()->user()->can('update', $course),
                 'delete' => auth()->user()->can('delete', $course),

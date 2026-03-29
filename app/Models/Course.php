@@ -29,6 +29,7 @@ class Course extends Model
         'cover_image',
         'instructor_name',
         'instructor_bio',
+        'instructor_image',
         'duration_text',
         'start_date',
         'end_date',

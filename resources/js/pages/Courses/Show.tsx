@@ -28,6 +28,7 @@ import {
     UserCircle,
     ClipboardList,
     ExternalLink,
+    Globe,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from '@inertiajs/react';
@@ -47,13 +48,14 @@ const statusColors: Record<string, string> = {
 interface Props {
     course: Course;
     recentEnrollments: Enrollment[];
+    businessSlug: string;
     can: {
         update: boolean;
         delete: boolean;
     };
 }
 
-export default function CourseShow({ course, recentEnrollments, can }: Props) {
+export default function CourseShow({ course, recentEnrollments, businessSlug, can }: Props) {
     const handleDelete = () => {
         router.delete(`/courses/${course.id}`);
     };
@@ -119,6 +121,16 @@ export default function CourseShow({ course, recentEnrollments, can }: Props) {
                             <Users className="mr-2 h-4 w-4" />
                             Inscripciones
                         </Button>
+                        <a
+                            href={`/${businessSlug}/courses/${course.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Button variant="outline">
+                                <Globe className="mr-2 h-4 w-4" />
+                                Pagina Publica
+                            </Button>
+                        </a>
                         {can.delete && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -244,12 +256,27 @@ export default function CourseShow({ course, recentEnrollments, can }: Props) {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="font-medium">{course.instructor_name}</p>
-                                    {course.instructor_bio && (
-                                        <p className="mt-2 text-sm text-muted-foreground">
-                                            {course.instructor_bio}
-                                        </p>
-                                    )}
+                                    <div className="flex items-start gap-4">
+                                        {course.instructor_image ? (
+                                            <img
+                                                src={`/storage/${course.instructor_image}`}
+                                                alt={course.instructor_name || 'Instructor'}
+                                                className="h-16 w-16 shrink-0 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-muted">
+                                                <UserCircle className="h-8 w-8 text-muted-foreground" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="font-medium">{course.instructor_name}</p>
+                                            {course.instructor_bio && (
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    {course.instructor_bio}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                         )}

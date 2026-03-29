@@ -31,6 +31,7 @@ class UpdateCourseRequest extends FormRequest
             'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
             'instructor_name' => ['nullable', 'string', 'max:255'],
             'instructor_bio' => ['nullable', 'string', 'max:1000'],
+            'instructor_image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
             'duration_text' => ['nullable', 'string', 'max:255'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
