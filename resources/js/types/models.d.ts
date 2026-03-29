@@ -345,6 +345,7 @@ export interface Course {
     cover_image: string | null;
     instructor_name: string | null;
     instructor_bio: string | null;
+    instructor_image: string | null;
     duration_text: string | null;
     start_date: string | null;
     end_date: string | null;
@@ -392,6 +393,7 @@ export interface CourseFormData {
     cover_image: File | null;
     instructor_name: string;
     instructor_bio: string;
+    instructor_image: File | null;
     duration_text: string;
     start_date: string;
     end_date: string;

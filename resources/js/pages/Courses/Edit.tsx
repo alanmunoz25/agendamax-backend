@@ -131,6 +131,7 @@ export default function EditCourse({ course }: Props) {
         cover_image: null as File | null,
         instructor_name: course.instructor_name || '',
         instructor_bio: course.instructor_bio || '',
+        instructor_image: null as File | null,
         duration_text: course.duration_text || '',
         start_date: course.start_date || '',
         end_date: course.end_date || '',
@@ -146,6 +147,9 @@ export default function EditCourse({ course }: Props) {
 
     const [imagePreview, setImagePreview] = useState<string | null>(
         course.cover_image ? `/storage/${course.cover_image}` : null,
+    );
+    const [instructorImagePreview, setInstructorImagePreview] = useState<string | null>(
+        course.instructor_image ? `/storage/${course.instructor_image}` : null,
     );
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,7 +176,7 @@ export default function EditCourse({ course }: Props) {
                 { title: 'Editar' },
             ]}
         >
-            <div className="mx-auto max-w-3xl space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -299,6 +303,29 @@ export default function EditCourse({ course }: Props) {
                                     rows={3}
                                 />
                                 <InputError message={errors.instructor_bio} className="mt-2" />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="instructor_image">Foto del Instructor</Label>
+                                <Input
+                                    id="instructor_image"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] || null;
+                                        setData('instructor_image', file);
+                                        setInstructorImagePreview(file ? URL.createObjectURL(file) : null);
+                                    }}
+                                    className="mt-1"
+                                />
+                                <InputError message={errors.instructor_image} className="mt-2" />
+                                {instructorImagePreview && (
+                                    <img
+                                        src={instructorImagePreview}
+                                        alt="Instructor preview"
+                                        className="mt-3 h-24 w-24 rounded-full object-cover"
+                                    />
+                                )}
                             </div>
                         </CardContent>
                     </Card>
