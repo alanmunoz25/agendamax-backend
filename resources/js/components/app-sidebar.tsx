@@ -20,6 +20,7 @@ import {
     LayoutGrid,
     Briefcase,
     FolderTree,
+    GraduationCap,
     Users,
     UserCog,
     Building2,
@@ -88,6 +89,11 @@ function useNavItems(): NavItem[] {
                     title: 'Services',
                     href: '/services',
                     icon: Briefcase,
+                },
+                {
+                    title: 'Cursos',
+                    href: '/courses',
+                    icon: GraduationCap,
                 },
                 {
                     title: 'Categories',
