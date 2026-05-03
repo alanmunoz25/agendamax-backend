@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Models\Appointment;
+use App\Models\Service;
 use App\Services\AppointmentService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -125,15 +127,25 @@ class AppointmentController extends Controller
             'date' => 'required|date|after_or_equal:today',
         ]);
 
+        $serviceId = (int) $validated['service_id'];
+        $date = $validated['date'];
+
+        $service = Service::withoutGlobalScopes()->findOrFail($serviceId);
+
         $slots = $this->appointmentService->getAvailableSlots(
             (int) $validated['employee_id'],
-            (int) $validated['service_id'],
-            $validated['date']
+            $serviceId,
+            $date
         );
 
+        $formattedSlots = $slots->map(fn (string $start) => [
+            'start' => $start,
+            'end' => Carbon::parse($date.' '.$start)->addMinutes($service->duration)->format('H:i:s'),
+        ]);
+
         return response()->json([
-            'date' => $validated['date'],
-            'slots' => $slots,
+            'date' => $date,
+            'slots' => $formattedSlots,
         ]);
     }
 }

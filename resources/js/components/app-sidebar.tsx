@@ -1,5 +1,8 @@
+import { NavElectronicInvoice } from '@/components/electronic-invoice/nav-electronic-invoice';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
+import { NavPayroll } from '@/components/nav-payroll';
+import { NavPos } from '@/components/nav-pos';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -137,6 +140,7 @@ const footerNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const navItems = useNavItems();
+    const { permissions } = usePage<SharedData>().props;
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -154,6 +158,9 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={navItems} />
+                {permissions.is_business_admin && <NavPayroll />}
+                {permissions.is_business_admin && <NavElectronicInvoice />}
+                {(permissions.is_business_admin || permissions.is_employee) && <NavPos />}
             </SidebarContent>
 
             <SidebarFooter>

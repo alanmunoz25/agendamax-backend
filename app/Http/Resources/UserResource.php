@@ -29,6 +29,8 @@ class UserResource extends JsonResource
             'avatar_url' => $this->avatar_url,
             'birthday_day' => $this->birthday_day,
             'birthday_month' => $this->birthday_month,
+            'email_verified_at' => $this->email_verified_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
             'notes' => $this->when($this->notes !== null, $this->notes),
             'source' => $this->when($this->source !== null, $this->source),
             'interested_service_id' => $this->when($this->interested_service_id !== null, $this->interested_service_id),

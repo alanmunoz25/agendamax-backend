@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Pivots\AppointmentService;
 use App\Models\Traits\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Appointment extends Model
@@ -32,6 +34,9 @@ class Appointment extends Model
         'cancellation_reason',
         'google_event_id',
         'google_synced_at',
+        'completed_at',
+        'final_price',
+        'ticket_id',
     ];
 
     /**
@@ -45,6 +50,8 @@ class Appointment extends Model
             'scheduled_at' => 'datetime',
             'scheduled_until' => 'datetime',
             'google_synced_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'final_price' => 'decimal:2',
         ];
     }
 
@@ -74,11 +81,13 @@ class Appointment extends Model
 
     /**
      * Get the services for this appointment (multi-service pivot).
+     * Uses dedicated AppointmentService pivot model so commission records can FK to individual lines.
      */
     public function services(): BelongsToMany
     {
         return $this->belongsToMany(Service::class, 'appointment_services')
-            ->withPivot('employee_id')
+            ->using(AppointmentService::class)
+            ->withPivot('id', 'employee_id')
             ->withTimestamps();
     }
 
@@ -88,5 +97,37 @@ class Appointment extends Model
     public function visit(): HasOne
     {
         return $this->hasOne(Visit::class);
+    }
+
+    /**
+     * Get the commission records generated for this appointment.
+     */
+    public function commissionRecords(): HasMany
+    {
+        return $this->hasMany(CommissionRecord::class);
+    }
+
+    /**
+     * Get the tips received at this appointment.
+     */
+    public function tips(): HasMany
+    {
+        return $this->hasMany(Tip::class);
+    }
+
+    /**
+     * Get the electronic invoice (e-CF) emitted for this appointment.
+     */
+    public function ecf(): HasOne
+    {
+        return $this->hasOne(Ecf::class);
+    }
+
+    /**
+     * Get the POS ticket that was generated when this appointment was checked out.
+     */
+    public function ticket(): BelongsTo
+    {
+        return $this->belongsTo(PosTicket::class, 'ticket_id');
     }
 }

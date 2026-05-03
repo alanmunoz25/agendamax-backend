@@ -34,7 +34,7 @@ class AppointmentServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->service = new AppointmentService;
+        $this->service = app(AppointmentService::class);
 
         // Create a business with admin
         $this->business = Business::factory()->create([
@@ -111,7 +111,7 @@ class AppointmentServiceTest extends TestCase
         ]);
 
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Employee cannot provide this service');
+        $this->expectExceptionMessage('Employee cannot provide service');
 
         $this->service->createAppointment([
             'service_id' => $massage->id,
@@ -214,17 +214,13 @@ class AppointmentServiceTest extends TestCase
 
         $this->assertGreaterThan(0, $slots->count());
 
-        // Check that 10:00 slot is not available
-        $tenAmSlot = $slots->first(function ($slot) {
-            return Carbon::parse($slot['start'])->hour === 10;
-        });
+        // Check that 10:00 slot is not available (blocked by existing appointment)
+        $tenAmSlot = $slots->first(fn ($slot) => str_starts_with($slot, '10:'));
 
         $this->assertNull($tenAmSlot);
 
         // Check that 9:00 slot is available
-        $nineAmSlot = $slots->first(function ($slot) {
-            return Carbon::parse($slot['start'])->hour === 9;
-        });
+        $nineAmSlot = $slots->first(fn ($slot) => str_starts_with($slot, '09:'));
 
         $this->assertNotNull($nineAmSlot);
     }

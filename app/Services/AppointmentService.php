@@ -205,7 +205,7 @@ class AppointmentService
      * Get available time slots for an employee on a given date.
      *
      * @param  string  $date  Format: Y-m-d
-     * @return Collection<int, array{start: string, end: string}>
+     * @return Collection<int, string> Time strings in "HH:MM:SS" format
      */
     public function getAvailableSlots(int $employeeId, int $serviceId, string $date): Collection
     {
@@ -262,10 +262,7 @@ class AppointmentService
             });
 
             if (! $hasConflict) {
-                $availableSlots->push([
-                    'start' => $currentTime->toIso8601String(),
-                    'end' => $slotEnd->toIso8601String(),
-                ]);
+                $availableSlots->push($currentTime->format('H:i:s'));
             }
 
             // Move to next slot (30-minute increments)

@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Business extends Model
 {
@@ -30,6 +31,7 @@ class Business extends Model
         'loyalty_reward_description',
         'status',
         'timezone',
+        'pos_commissions_enabled',
     ];
 
     /**
@@ -42,6 +44,7 @@ class Business extends Model
         return [
             'loyalty_stamps_required' => 'integer',
             'status' => 'string',
+            'pos_commissions_enabled' => 'boolean',
         ];
     }
 
@@ -91,5 +94,21 @@ class Business extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Get the electronic invoice configuration for this business.
+     */
+    public function feConfig(): HasOne
+    {
+        return $this->hasOne(BusinessFeConfig::class);
+    }
+
+    /**
+     * Get the e-CFs emitted by this business.
+     */
+    public function ecfs(): HasMany
+    {
+        return $this->hasMany(Ecf::class);
     }
 }

@@ -46,4 +46,14 @@ class EmployeeFactory extends Factory
             'is_active' => false,
         ]);
     }
+
+    /**
+     * Employee with a specific base salary for payroll calculations.
+     */
+    public function withBaseSalary(float $salary): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'base_salary' => $salary,
+        ]);
+    }
 }

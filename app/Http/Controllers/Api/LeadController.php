@@ -28,17 +28,20 @@ class LeadController extends Controller
      */
     public function store(StoreLeadRequest $request): JsonResponse
     {
-        $user = User::create([
+        $user = new User;
+        $user->fill([
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
             'phone' => $request->validated('phone'),
             'password' => Str::random(32),
-            'role' => 'lead',
-            'business_id' => $request->validated('business_id'),
             'interested_service_id' => $request->validated('interested_service_id'),
             'notes' => $request->validated('notes'),
             'source' => $request->validated('source'),
         ]);
+        $user->forceFill([
+            'role' => 'lead',
+            'business_id' => $request->validated('business_id'),
+        ])->save();
 
         return (new UserResource($user))
             ->response()
@@ -74,17 +77,20 @@ class LeadController extends Controller
                         $lead->update($updates);
                     }
                 } else {
-                    $lead = User::create([
+                    $lead = new User;
+                    $lead->fill([
                         'name' => $request->validated('name'),
                         'email' => $request->validated('email'),
                         'phone' => $request->validated('phone'),
                         'password' => Str::random(32),
-                        'role' => 'lead',
-                        'business_id' => $businessId,
                         'interested_service_id' => $request->validated('interested_service_id'),
                         'notes' => $request->validated('notes'),
                         'source' => $request->validated('source'),
                     ]);
+                    $lead->forceFill([
+                        'role' => 'lead',
+                        'business_id' => $businessId,
+                    ])->save();
                 }
 
                 $employeeId = $request->validated('employee_id');

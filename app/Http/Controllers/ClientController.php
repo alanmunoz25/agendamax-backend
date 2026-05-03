@@ -88,12 +88,16 @@ class ClientController extends Controller
     {
         $this->authorize('create', User::class);
 
-        $client = User::create([
-            ...$request->validated(),
-            'business_id' => auth()->user()->business_id,
-            'role' => 'client',
+        $validated = $request->validated();
+        $client = new User;
+        $client->fill([
+            ...$validated,
             'password' => bcrypt(str()->random(16)), // Random password, user will reset via email
         ]);
+        $client->forceFill([
+            'business_id' => auth()->user()->business_id,
+            'role' => 'client',
+        ])->save();
 
         return redirect()->route('clients.show', $client)
             ->with('success', 'Client created successfully.');

@@ -10,8 +10,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { ConfirmationModal } from '@/components/confirmation-modal';
-import type { Appointment } from '@/types/models';
+import { CheckoutDrawer } from '@/components/pos/checkout-drawer';
+import type { Appointment, Service } from '@/types/models';
 import {
     Edit,
     Trash2,
@@ -22,18 +29,43 @@ import {
     DollarSign,
     FileText,
     QrCode,
+    FilePlus,
+    Loader,
+    ShoppingCart,
 } from 'lucide-react';
 
+interface EcfSummary {
+    id: number;
+    ncf: string;
+    status: string;
+    issued_at: string;
+}
+
 interface Props {
-    appointment: Appointment;
+    appointment: Appointment & { ticket_id: number | null };
     can: {
         edit: boolean;
         cancel: boolean;
+        issue_ecf: boolean;
+        checkout: boolean;
     };
+    ecf?: EcfSummary | null;
+    employees_for_checkout: Array<{ id: number; user: { name: string } }>;
+    ecf_enabled: boolean;
 }
 
-export default function ShowAppointment({ appointment, can }: Props) {
+export default function ShowAppointment({ appointment, can, ecf, employees_for_checkout, ecf_enabled }: Props) {
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showEcfModal, setShowEcfModal] = useState(false);
+    const [showCheckoutDrawer, setShowCheckoutDrawer] = useState(false);
+
+    const appointmentServices: Array<{ description: string; qty: number; unit_price: string; discount_pct: string }> =
+        (appointment.services ?? []).map((svc) => ({
+            description: svc.name,
+            qty: 1,
+            unit_price: String(svc.price),
+            discount_pct: '0',
+        }));
 
     const handleCancel = () => {
         router.delete(`/appointments/${appointment.id}`, {
@@ -91,6 +123,71 @@ export default function ShowAppointment({ appointment, can }: Props) {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* POS Checkout */}
+                        {appointment.ticket_id !== null && (
+                            <Badge className="bg-[var(--color-green-brand)]/10 text-[var(--color-green-brand)]">
+                                ✓ Cobrada
+                            </Badge>
+                        )}
+                        {can.checkout && appointment.ticket_id === null && appointment.status === 'completed' && (
+                            <Button
+                                onClick={() => setShowCheckoutDrawer(true)}
+                                className="bg-[var(--color-amber-brand)] hover:bg-[var(--color-amber-brand)]/90 text-white"
+                            >
+                                <ShoppingCart className="mr-2 h-4 w-4" />
+                                Cobrar ●
+                            </Button>
+                        )}
+                        {can.checkout && appointment.ticket_id === null && appointment.status !== 'completed' && (
+                            <Button variant="outline" onClick={() => setShowCheckoutDrawer(true)}>
+                                <ShoppingCart className="mr-2 h-4 w-4" />
+                                Cobrar
+                            </Button>
+                        )}
+
+                        {/* e-CF Button */}
+                        {!ecf && can.issue_ecf && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowEcfModal(true)}
+                            >
+                                <FilePlus className="mr-2 h-4 w-4" />
+                                Emitir e-CF
+                            </Button>
+                        )}
+                        {ecf && (ecf.status === 'draft' || ecf.status === 'signed' || ecf.status === 'sent') && (
+                            <Button variant="outline" disabled>
+                                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                e-CF en proceso
+                            </Button>
+                        )}
+                        {ecf && ecf.status === 'accepted' && (
+                            <Button
+                                variant="outline"
+                                onClick={() =>
+                                    router.visit(
+                                        `/admin/electronic-invoice/issued/${ecf.id}`
+                                    )
+                                }
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Ver e-CF #{ecf.ncf} →
+                            </Button>
+                        )}
+                        {ecf && (ecf.status === 'rejected' || ecf.status === 'error') && (
+                            <Button
+                                variant="destructive"
+                                onClick={() =>
+                                    router.visit(
+                                        `/admin/electronic-invoice/issued/${ecf.id}`
+                                    )
+                                }
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                e-CF Rechazado — Ver →
+                            </Button>
+                        )}
+
                         {can.edit && isEditable && (
                             <Button
                                 variant="outline"
@@ -459,6 +556,63 @@ export default function ShowAppointment({ appointment, can }: Props) {
                 cancelLabel="Keep Appointment"
                 onConfirm={handleCancel}
                 variant="destructive"
+            />
+
+            {/* e-CF Wizard Modal — redirect to create page with appointment context */}
+            <Dialog open={showEcfModal} onOpenChange={setShowEcfModal}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Emitir Comprobante Fiscal Electrónico</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <p className="text-sm text-muted-foreground">
+                            Se abrirá el asistente de emisión de e-CF con los datos de este appointment pre-cargados.
+                        </p>
+                        <div className="rounded-md bg-muted p-3 text-sm">
+                            <p><span className="text-muted-foreground">Cliente:</span> {appointment.client?.name}</p>
+                            {(appointment.services?.length ?? 0) > 0 && (
+                                <p><span className="text-muted-foreground">Servicios:</span> {appointment.services?.map((s) => s.name).join(', ')}</p>
+                            )}
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <Button variant="outline" onClick={() => setShowEcfModal(false)}>
+                                Cancelar
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowEcfModal(false);
+                                    router.visit('/admin/electronic-invoice/issued/create');
+                                }}
+                            >
+                                <FilePlus className="mr-2 h-4 w-4" />
+                                Ir al Asistente →
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* POS Checkout Drawer */}
+            <CheckoutDrawer
+                open={showCheckoutDrawer}
+                onOpenChange={setShowCheckoutDrawer}
+                source="appointment"
+                appointmentId={appointment.id}
+                initialItems={(appointment.services ?? []).map((svc) => ({
+                    id: svc.id,
+                    type: 'service' as const,
+                    name: svc.name,
+                    unit_price: String(svc.price),
+                    qty: 1,
+                }))}
+                client={appointment.client ?? null}
+                employee={appointment.employee ?? null}
+                employees={employees_for_checkout}
+                ecfEnabled={ecf_enabled}
+                onSuccess={() => {
+                    setShowCheckoutDrawer(false);
+                    router.reload();
+                }}
             />
         </AppLayout>
     );

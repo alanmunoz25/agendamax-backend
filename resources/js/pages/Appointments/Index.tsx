@@ -14,12 +14,15 @@ import {
 import { DataTable, type Column } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { ConfirmationModal } from '@/components/confirmation-modal';
-import type { Appointment, Employee, Service } from '@/types/models';
+import type { Appointment, Employee } from '@/types/models';
+import type { Service } from '@/types/models';
 import type { PaginatedData } from '@/types/pagination';
-import { Plus, Calendar, List, X, Clock, User as UserIcon } from 'lucide-react';
+
+type AppointmentWithEcf = Appointment & { ecf_ncf?: string | null };
+import { Plus, Calendar, List, X, Clock, User as UserIcon, FileText } from 'lucide-react';
 
 interface Props {
-    appointments: PaginatedData<Appointment> | Appointment[];
+    appointments: PaginatedData<AppointmentWithEcf> | AppointmentWithEcf[];
     employees: Employee[];
     services: Service[];
     filters: {
@@ -51,15 +54,17 @@ export default function AppointmentsIndex({
     can,
 }: Props) {
     const [cancelAppointment, setCancelAppointment] =
-        useState<Appointment | null>(null);
+        useState<AppointmentWithEcf | null>(null);
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>(
         filters.view || 'list'
     );
 
     const isCalendarView = viewMode === 'calendar';
-    const appointmentList = Array.isArray(appointments)
-        ? appointments
-        : appointments.data;
+    const appointmentList = (
+        Array.isArray(appointments)
+            ? appointments
+            : appointments.data
+    ) as AppointmentWithEcf[];
 
     const handleSearch = (value: string) => {
         router.get(
@@ -113,7 +118,7 @@ export default function AppointmentsIndex({
         return colors[status] || 'default';
     };
 
-    const columns: Column<Appointment>[] = [
+    const columns: Column<AppointmentWithEcf>[] = [
         {
             key: 'client',
             label: 'Client',
@@ -213,6 +218,27 @@ export default function AppointmentsIndex({
                     >
                         View
                     </Button>
+                    {/* e-CF badge / indicator */}
+                    {appointment.ecf_ncf ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                router.visit(
+                                    `/admin/electronic-invoice/issued?search=${appointment.ecf_ncf}`
+                                )
+                            }
+                            className="gap-1.5 text-xs text-primary"
+                        >
+                            <FileText className="h-3.5 w-3.5" />
+                            e-CF {appointment.ecf_ncf}
+                        </Button>
+                    ) : appointment.status === 'completed' ? (
+                        <span
+                            className="h-2 w-2 rounded-full bg-muted-foreground"
+                            title="Sin e-CF emitido"
+                        />
+                    ) : null}
                     {can.cancel &&
                         appointment.status !== 'cancelled' &&
                         appointment.status !== 'completed' && (
@@ -409,7 +435,7 @@ export default function AppointmentsIndex({
                         </p>
                     </div>
                 ) : (
-                    <DataTable
+                    <DataTable<AppointmentWithEcf>
                         columns={columns}
                         data={appointmentList}
                         pagination={
@@ -432,7 +458,7 @@ export default function AppointmentsIndex({
 
             {/* Cancel Confirmation Modal */}
             <ConfirmationModal
-                open={!!cancelAppointment}
+                open={cancelAppointment !== null}
                 onOpenChange={(open) => !open && setCancelAppointment(null)}
                 title="Cancel Appointment"
                 description={

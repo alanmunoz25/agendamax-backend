@@ -47,52 +47,45 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // Helper: find or create user with guarded fields (role, business_id).
+        // firstOrCreate cannot set guarded fields; we use firstOrNew + forceFill instead.
+        $createUser = function (array $search, array $guarded, array $fillable) {
+            $user = User::where($search)->first();
+            if (! $user) {
+                $user = new User;
+                $user->fill($fillable);
+                $user->forceFill(array_merge($search, $guarded))->save();
+            }
+
+            return $user;
+        };
+
         // Create super admin (no business_id)
-        User::firstOrCreate(
+        $createUser(
             ['email' => 'superadmin@crezer.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-                'business_id' => null,
-                'role' => 'super_admin',
-            ]
+            ['role' => 'super_admin', 'business_id' => null],
+            ['name' => 'Super Admin', 'password' => bcrypt('password'), 'email_verified_at' => now()]
         );
 
         // Create business admin for first business
-        $admin1 = User::firstOrCreate(
+        $admin1 = $createUser(
             ['email' => 'admin@testbarber.com'],
-            [
-                'name' => 'Admin User',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-                'business_id' => $business1->id,
-                'role' => 'business_admin',
-            ]
+            ['role' => 'business_admin', 'business_id' => $business1->id],
+            ['name' => 'Admin User', 'password' => bcrypt('password'), 'email_verified_at' => now()]
         );
 
         // Create business admin for second business
-        $admin2 = User::firstOrCreate(
+        $admin2 = $createUser(
             ['email' => 'admin@elitesalon.com'],
-            [
-                'name' => 'Elite Admin',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-                'business_id' => $business2->id,
-                'role' => 'business_admin',
-            ]
+            ['role' => 'business_admin', 'business_id' => $business2->id],
+            ['name' => 'Elite Admin', 'password' => bcrypt('password'), 'email_verified_at' => now()]
         );
 
         // Create employee for first business
-        $employee1 = User::firstOrCreate(
+        $employee1 = $createUser(
             ['email' => 'employee@testbarber.com'],
-            [
-                'name' => 'John Barber',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-                'business_id' => $business1->id,
-                'role' => 'employee',
-            ]
+            ['role' => 'employee', 'business_id' => $business1->id],
+            ['name' => 'John Barber', 'password' => bcrypt('password'), 'email_verified_at' => now()]
         );
 
         // Create Employee model entry
@@ -133,41 +126,23 @@ class DatabaseSeeder extends Seeder
         );
 
         // Create clients for first business
-        $client1 = User::firstOrCreate(
+        $client1 = $createUser(
             ['email' => 'client@testbarber.com'],
-            [
-                'name' => 'Client User',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-                'business_id' => $business1->id,
-                'role' => 'client',
-                'phone' => '+1111111111',
-            ]
+            ['role' => 'client', 'business_id' => $business1->id],
+            ['name' => 'Client User', 'password' => bcrypt('password'), 'email_verified_at' => now(), 'phone' => '+1111111111']
         );
 
         // Create additional clients
-        $client2 = User::firstOrCreate(
+        $client2 = $createUser(
             ['email' => 'sarah@example.com'],
-            [
-                'name' => 'Sarah Johnson',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-                'business_id' => $business1->id,
-                'role' => 'client',
-                'phone' => '+1222222222',
-            ]
+            ['role' => 'client', 'business_id' => $business1->id],
+            ['name' => 'Sarah Johnson', 'password' => bcrypt('password'), 'email_verified_at' => now(), 'phone' => '+1222222222']
         );
 
-        $client3 = User::firstOrCreate(
+        $client3 = $createUser(
             ['email' => 'mike@example.com'],
-            [
-                'name' => 'Mike Davis',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-                'business_id' => $business1->id,
-                'role' => 'client',
-                'phone' => '+1333333333',
-            ]
+            ['role' => 'client', 'business_id' => $business1->id],
+            ['name' => 'Mike Davis', 'password' => bcrypt('password'), 'email_verified_at' => now(), 'phone' => '+1333333333']
         );
 
         // Create appointments for first business

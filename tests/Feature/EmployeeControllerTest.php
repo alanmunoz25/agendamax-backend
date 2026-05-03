@@ -39,6 +39,7 @@ class EmployeeControllerTest extends TestCase
         $this->employeeUser = User::factory()->create([
             'business_id' => $this->business->id,
             'role' => 'employee',
+            'name' => 'Jane Smith',
         ]);
 
         $this->employee = Employee::factory()->create([

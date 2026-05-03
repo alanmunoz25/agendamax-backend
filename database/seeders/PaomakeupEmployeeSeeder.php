@@ -72,13 +72,16 @@ class PaomakeupEmployeeSeeder extends Seeder
                 continue;
             }
 
-            $user = User::create([
+            $user = new User;
+            $user->fill([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => 'password',
+            ]);
+            $user->forceFill([
                 'role' => 'employee',
                 'business_id' => self::BUSINESS_ID,
-            ]);
+            ])->save();
 
             $employee = Employee::create([
                 'user_id' => $user->id,

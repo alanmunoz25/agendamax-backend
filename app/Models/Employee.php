@@ -27,6 +27,7 @@ class Employee extends Model
         'photo_url',
         'bio',
         'is_active',
+        'base_salary',
     ];
 
     /**
@@ -38,6 +39,7 @@ class Employee extends Model
     {
         return [
             'is_active' => 'boolean',
+            'base_salary' => 'decimal:2',
         ];
     }
 
@@ -68,5 +70,45 @@ class Employee extends Model
     public function googleAccount(): HasOne
     {
         return $this->hasOne(GoogleAccount::class);
+    }
+
+    /**
+     * Get the commission rules defined for this employee.
+     */
+    public function commissionRules(): HasMany
+    {
+        return $this->hasMany(CommissionRule::class);
+    }
+
+    /**
+     * Get the commission records earned by this employee.
+     */
+    public function commissionRecords(): HasMany
+    {
+        return $this->hasMany(CommissionRecord::class);
+    }
+
+    /**
+     * Get the payroll records for this employee.
+     */
+    public function payrollRecords(): HasMany
+    {
+        return $this->hasMany(PayrollRecord::class);
+    }
+
+    /**
+     * Get the tips received by this employee.
+     */
+    public function tips(): HasMany
+    {
+        return $this->hasMany(Tip::class);
+    }
+
+    /**
+     * Get the payroll adjustments applied to this employee.
+     */
+    public function payrollAdjustments(): HasMany
+    {
+        return $this->hasMany(PayrollAdjustment::class);
     }
 }

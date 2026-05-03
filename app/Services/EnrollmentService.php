@@ -54,14 +54,17 @@ class EnrollmentService
                 ->first();
 
             if (! $user) {
-                $user = User::create([
+                $user = new User;
+                $user->fill([
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'phone' => $data['phone'] ?? null,
                     'password' => Str::random(32),
+                ]);
+                $user->forceFill([
                     'role' => 'lead',
                     'business_id' => $course->business_id,
-                ]);
+                ])->save();
             }
 
             $isFree = (float) $course->price <= 0;

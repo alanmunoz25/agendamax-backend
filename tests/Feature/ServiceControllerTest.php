@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\Business;
 use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -80,18 +81,24 @@ class ServiceControllerTest extends TestCase
 
     public function test_services_index_can_be_filtered_by_category(): void
     {
+        $hairCategory = ServiceCategory::factory()->create([
+            'business_id' => $this->business->id,
+            'name' => 'Hair',
+        ]);
+
         Service::factory()->create([
             'business_id' => $this->business->id,
-            'category' => 'Hair',
+            'name' => 'Balayage',
+            'service_category_id' => $hairCategory->id,
         ]);
 
         $response = $this->actingAs($this->businessAdmin)
-            ->get('/services?category=Hair');
+            ->get('/services?category_id='.$hairCategory->id);
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->has('services.data', 1)
-            ->where('services.data.0.category', 'Hair')
+            ->where('services.data.0.name', 'Balayage')
         );
     }
 

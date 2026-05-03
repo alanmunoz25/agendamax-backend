@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Events\AppointmentCancelled;
 use App\Events\AppointmentCreated;
 use App\Events\AppointmentUpdated;
+use App\Jobs\CalculateAppointmentCommission;
 use App\Models\Appointment;
 use App\Models\Stamp;
 use App\Services\EmailNotificationService;
@@ -59,9 +60,16 @@ class AppointmentObserver
         $newScheduledAt = $appointment->scheduled_at;
 
         try {
-            // Handle completion - create loyalty stamp
+            // Handle completion - create loyalty stamp and trigger commission calculation
             if ($newStatus === 'completed' && $oldStatus !== 'completed') {
                 $this->handleAppointmentCompletion($appointment);
+
+                if ($appointment->completed_at === null) {
+                    $appointment->completed_at = now();
+                    $appointment->saveQuietly();
+                }
+
+                CalculateAppointmentCommission::dispatch($appointment->id)->afterCommit();
             }
 
             // Handle cancellation

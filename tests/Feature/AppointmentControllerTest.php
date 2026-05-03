@@ -73,7 +73,8 @@ class AppointmentControllerTest extends TestCase
             'service_id' => $this->service->id,
             'employee_id' => $this->employee->id,
             'client_id' => $this->client->id,
-            'scheduled_at' => now()->addDay(),
+            'scheduled_at' => now()->addDay()->setTime(10, 0),
+            'scheduled_until' => now()->addDay()->setTime(10, 30),
             'status' => 'pending',
         ]);
     }

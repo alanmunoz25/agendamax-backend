@@ -386,6 +386,108 @@ export interface Enrollment {
     user?: User;
 }
 
+// ─── Payroll ───────────────────────────────────────────────────────────────
+
+export type PayrollPeriodStatus = 'open' | 'closed';
+export type PayrollRecordStatus = 'draft' | 'approved' | 'paid' | 'voided';
+export type PayrollAdjustmentType = 'credit' | 'debit';
+
+export interface PayrollPeriod {
+    id: number;
+    business_id: number;
+    starts_on: string; // YYYY-MM-DD
+    ends_on: string; // YYYY-MM-DD
+    status: PayrollPeriodStatus;
+    closed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    // Aggregates
+    records_count?: number;
+    paid_count?: number;
+    has_records?: boolean;
+}
+
+export interface CommissionRecord {
+    id: number;
+    business_id: number;
+    payroll_period_id: number | null;
+    employee_id: number;
+    service_id: number;
+    service_price_snapshot: string;
+    rule_type_snapshot: string;
+    rule_value_snapshot: string;
+    commission_amount: string;
+    status: string;
+    generated_at: string;
+    locked_at: string | null;
+    paid_at: string | null;
+    created_at: string;
+    // Relationships
+    service?: Service;
+    appointment?: Appointment;
+    is_retroactive?: boolean;
+}
+
+export interface Tip {
+    id: number;
+    business_id: number;
+    appointment_id: number | null;
+    employee_id: number;
+    payroll_period_id: number | null;
+    amount: string;
+    payment_method: string | null;
+    notes: string | null;
+    received_at: string;
+    created_at: string;
+}
+
+export interface PayrollAdjustment {
+    id: number;
+    business_id: number;
+    payroll_period_id: number;
+    employee_id: number;
+    type: PayrollAdjustmentType;
+    amount: string;
+    reason: string;
+    description: string | null;
+    created_by: number;
+    created_at: string;
+    // Relationships
+    employee?: Employee;
+    creator?: User;
+}
+
+export interface PayrollRecord {
+    id: number;
+    business_id: number;
+    payroll_period_id: number;
+    employee_id: number;
+    base_salary_snapshot: string;
+    commissions_total: string;
+    tips_total: string;
+    adjustments_total: string;
+    gross_total: string;
+    status: PayrollRecordStatus;
+    payment_method: string | null;
+    payment_reference: string | null;
+    approved_at: string | null;
+    approved_by: number | null;
+    paid_at: string | null;
+    paid_by: number | null;
+    voided_at: string | null;
+    voided_by: number | null;
+    void_reason: string | null;
+    snapshot_payload: unknown;
+    created_at: string;
+    updated_at: string;
+    // Relationships
+    employee?: Employee;
+    commissions?: CommissionRecord[];
+    tips?: Tip[];
+    adjustments?: PayrollAdjustment[];
+    period?: PayrollPeriod;
+}
+
 export interface CourseFormData {
     title: string;
     description: string;

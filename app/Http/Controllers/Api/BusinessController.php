@@ -9,7 +9,9 @@ use App\Http\Resources\BusinessResource;
 use App\Http\Resources\EmployeeResource;
 use App\Models\Business;
 use App\Models\Employee;
+use App\Models\Service;
 use App\Services\AppointmentService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -105,6 +107,8 @@ class BusinessController extends Controller
         $serviceId = (int) $validated['service_id'];
         $date = $validated['date'];
 
+        $service = Service::findOrFail($serviceId);
+
         // If employee_id provided, get slots for that specific employee
         if (! empty($validated['employee_id'])) {
             $employeeId = (int) $validated['employee_id'];
@@ -115,9 +119,14 @@ class BusinessController extends Controller
                 $date
             );
 
+            $formattedSlots = $slots->map(fn (string $start) => [
+                'start' => $start,
+                'end' => Carbon::parse($date.' '.$start)->addMinutes($service->duration)->format('H:i:s'),
+            ]);
+
             return response()->json([
                 'date' => $date,
-                'slots' => $slots,
+                'slots' => $formattedSlots,
             ]);
         }
 
@@ -128,6 +137,7 @@ class BusinessController extends Controller
             ->whereHas('services', function ($query) use ($serviceId) {
                 $query->where('services.id', $serviceId);
             })
+            ->with('user:id,name')
             ->get();
 
         $allSlots = collect();
@@ -141,7 +151,8 @@ class BusinessController extends Controller
 
             foreach ($employeeSlots as $slot) {
                 $allSlots->push([
-                    ...$slot,
+                    'start' => $slot,
+                    'end' => Carbon::parse($date.' '.$slot)->addMinutes($service->duration)->format('H:i:s'),
                     'employee_id' => $employee->id,
                     'employee_name' => $employee->user->name ?? null,
                 ]);

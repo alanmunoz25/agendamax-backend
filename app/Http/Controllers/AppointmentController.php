@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\Ecf;
 use App\Models\Employee;
 use App\Models\Service;
 use App\Models\User;
@@ -33,7 +34,7 @@ class AppointmentController extends Controller
         $user = auth()->user();
 
         $query = Appointment::query()
-            ->with(['service', 'employee.user', 'client']);
+            ->with(['service', 'employee.user', 'client', 'ecf:id,appointment_id,numero_ecf']);
 
         // Role-based query filtering
         if ($user->isEmployee()) {
@@ -120,8 +121,25 @@ class AppointmentController extends Controller
                 ->get(['id', 'name']);
         }
 
+        // Flatten ecf relationship to ecf_ncf string for frontend
+        $transformAppointment = function ($appt) {
+            $data = $appt->toArray();
+            $data['ecf_ncf'] = $appt->ecf?->numero_ecf ?? null;
+            unset($data['ecf']);
+
+            return $data;
+        };
+
+        if ($viewMode === 'calendar') {
+            $transformedAppointments = $appointments->map($transformAppointment)->all();
+        } else {
+            $paginatedArray = $appointments->toArray();
+            $paginatedArray['data'] = $appointments->getCollection()->map($transformAppointment)->all();
+            $transformedAppointments = $paginatedArray;
+        }
+
         return Inertia::render('Appointments/Index', [
-            'appointments' => $appointments,
+            'appointments' => $transformedAppointments,
             'employees' => $employees,
             'services' => $services,
             'filters' => $request->only(['search', 'status', 'employee_id', 'service_id', 'start_date', 'end_date', 'view', 'month']),
@@ -197,14 +215,47 @@ class AppointmentController extends Controller
             'employee.services',
             'client',
             'visit',
+            'ticket',
         ]);
+
+        $user = auth()->user();
+        $feConfig = $user->business?->feConfig;
+        $canIssueEcf = $feConfig?->activo === true && $appointment->status === 'completed';
+
+        // POS checkout eligibility
+        $posEnabled = $user->business !== null;
+        $canCheckout = $posEnabled
+            && in_array($appointment->status, ['pending', 'confirmed', 'in_progress', 'completed'])
+            && $appointment->ticket_id === null
+            && ($user->isBusinessAdmin() || $user->isEmployee());
+
+        $employeesForCheckout = Employee::query()
+            ->where('is_active', true)
+            ->with('user:id,name')
+            ->get(['id', 'user_id']);
+
+        $ecfEnabled = $feConfig?->activo === true;
+
+        $appointmentEcf = Ecf::withoutGlobalScopes()
+            ->where('appointment_id', $appointment->id)
+            ->first(['id', 'numero_ecf', 'status', 'created_at']);
 
         return Inertia::render('Appointments/Show', [
             'appointment' => $appointment,
             'can' => [
-                'edit' => auth()->user()->can('update', $appointment),
-                'cancel' => auth()->user()->can('delete', $appointment),
+                'edit' => $user->can('update', $appointment),
+                'cancel' => $user->can('delete', $appointment),
+                'issue_ecf' => $canIssueEcf,
+                'checkout' => $canCheckout,
             ],
+            'ecf' => $appointmentEcf ? [
+                'id' => $appointmentEcf->id,
+                'ncf' => $appointmentEcf->numero_ecf,
+                'status' => $appointmentEcf->status,
+                'issued_at' => $appointmentEcf->created_at?->toISOString(),
+            ] : null,
+            'employees_for_checkout' => $employeesForCheckout,
+            'ecf_enabled' => $ecfEnabled,
         ]);
     }
 

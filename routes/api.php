@@ -32,11 +32,16 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes (no authentication required)
 Route::prefix('v1')->group(function () {
-    // Authentication
-    Route::post('/auth/register', [AuthController::class, 'register']);
-    Route::post('/auth/login', [AuthController::class, 'login']);
-    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+    // Authentication — rate limiting prevents brute-force and credential stuffing.
+    // v1.05 debt: upgrade to per-email+IP composite key for smarter throttling.
+    Route::post('/auth/register', [AuthController::class, 'register'])
+        ->middleware('throttle:5,1');
+    Route::post('/auth/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1');
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])
+        ->middleware('throttle:3,10');
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,1');
 
     // Lead creation (public, for web app)
     Route::post('/leads', [LeadController::class, 'store']);
@@ -87,11 +92,17 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // Authentication
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/user', [AuthController::class, 'user']);
+    Route::patch('/auth/user', [AuthController::class, 'updateProfile']);
     Route::post('/auth/push-token', [AuthController::class, 'updatePushToken']);
 
     // Appointments
-    Route::get('/appointments/availability', [AppointmentController::class, 'availability']);
-    Route::apiResource('appointments', AppointmentController::class)->except(['update']);
+    Route::get('/appointments/availability', [AppointmentController::class, 'availability'])->name('api.appointments.availability');
+    Route::apiResource('appointments', AppointmentController::class)->except(['update'])->names([
+        'index' => 'api.appointments.index',
+        'store' => 'api.appointments.store',
+        'show' => 'api.appointments.show',
+        'destroy' => 'api.appointments.destroy',
+    ]);
 
     // Visits (QR verification)
     Route::post('/visits/verify', [VisitController::class, 'verifyQR']);
@@ -116,4 +127,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // Loyalty (client)
     Route::get('/loyalty/progress', [LoyaltyController::class, 'progress']);
     Route::get('/loyalty/stamps', [LoyaltyController::class, 'stamps']);
+
+    // Employee Payroll (employee role)
+    Route::prefix('employee/payroll')->middleware('throttle:60,1')->group(function () {
+        Route::get('/current', [\App\Http\Controllers\Api\Employee\PayrollController::class, 'current']);
+        Route::get('/history', [\App\Http\Controllers\Api\Employee\PayrollController::class, 'history']);
+        Route::get('/periods/{period}', [\App\Http\Controllers\Api\Employee\PayrollController::class, 'periodDetail']);
+        Route::get('/adjustments', [\App\Http\Controllers\Api\Employee\PayrollController::class, 'adjustments']);
+    });
 });

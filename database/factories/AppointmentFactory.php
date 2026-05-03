@@ -57,13 +57,30 @@ class AppointmentFactory extends Factory
     }
 
     /**
-     * Indicate that the appointment is completed.
+     * Indicate that the appointment is completed with payroll fields populated.
+     * Sets completed_at to scheduled_until and captures final_price from context.
      */
     public function completed(): static
     {
+        return $this->state(function (array $attributes) {
+            $scheduledUntil = $attributes['scheduled_until'] ?? fake()->dateTimeBetween('-2 months', '-1 day');
+
+            return [
+                'status' => 'completed',
+                'scheduled_at' => fake()->dateTimeBetween('-2 months', '-1 day'),
+                'completed_at' => $scheduledUntil,
+                'final_price' => fake()->randomFloat(2, 20, 200),
+            ];
+        });
+    }
+
+    /**
+     * Set a specific final price on the appointment.
+     */
+    public function withFinalPrice(float $price): static
+    {
         return $this->state(fn (array $attributes) => [
-            'status' => 'completed',
-            'scheduled_at' => fake()->dateTimeBetween('-2 months', '-1 day'),
+            'final_price' => $price,
         ]);
     }
 

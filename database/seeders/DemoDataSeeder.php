@@ -172,15 +172,18 @@ class DemoDataSeeder extends Seeder
         $names = array_slice($employeeNames[$business->name] ?? [], 0, $employeeCount);
 
         return collect($names)->map(function ($data) use ($business) {
-            // Create user for employee
-            $user = User::create([
+            // Create user for employee — role and business_id use forceFill (guarded fields)
+            $user = new User;
+            $user->fill([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => 'password', // Hashed automatically
                 'phone' => fake()->phoneNumber(),
+            ]);
+            $user->forceFill([
                 'role' => 'employee',
                 'business_id' => $business->id,
-            ]);
+            ])->save();
 
             // Create employee profile
             return Employee::create([
@@ -226,13 +229,14 @@ class DemoDataSeeder extends Seeder
         ];
 
         foreach ($clients as $client) {
-            User::create([
+            $newClient = new User;
+            $newClient->fill([
                 'name' => $client['name'],
                 'email' => $client['email'],
                 'password' => 'password', // Default password for testing
                 'phone' => $client['phone'],
-                'role' => 'client',
             ]);
+            $newClient->forceFill(['role' => 'client'])->save();
         }
 
         $this->command->info('👥 Created 3 client users for testing');

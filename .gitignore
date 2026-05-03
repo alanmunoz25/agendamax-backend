@@ -8,6 +8,7 @@
 /resources/js/routes
 /resources/js/wayfinder
 /storage/*.key
+/storage/app/firebase/
 /storage/pail
 /vendor
 .DS_Store

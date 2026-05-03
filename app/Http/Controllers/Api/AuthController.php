@@ -9,12 +9,18 @@ use App\Http\Requests\Api\ForgotPasswordRequest;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Requests\Api\ResetPasswordRequest;
+use App\Http\Requests\Api\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
+use App\Mail\PasswordResetCodeMail;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -26,14 +32,19 @@ class AuthController extends Controller
     {
         $businessId = $request->resolveBusinessId();
 
-        $user = User::create([
+        // role and business_id are excluded from $fillable to prevent mass-assignment.
+        // Trusted controller action uses forceFill to assign them explicitly.
+        $user = new User;
+        $user->fill([
             'name' => $request->name,
             'email' => $request->email,
             'password' => $request->password,
             'phone' => $request->phone,
+        ]);
+        $user->forceFill([
             'role' => 'client',
             'business_id' => $businessId,
-        ]);
+        ])->save();
 
         $user->load('business');
 
@@ -94,6 +105,21 @@ class AuthController extends Controller
     }
 
     /**
+     * Update authenticated user's profile.
+     */
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->fill($request->validated());
+        $user->save();
+
+        return response()->json([
+            'data' => new UserResource($user->fresh()),
+            'message' => 'Perfil actualizado.',
+        ]);
+    }
+
+    /**
      * Update push notification token.
      */
     public function updatePushToken(Request $request): JsonResponse
@@ -112,49 +138,70 @@ class AuthController extends Controller
     }
 
     /**
-     * Send password reset link via email.
+     * Send a 6-digit password reset code via email.
      */
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        $throttleKey = 'forgot-password:'.Str::lower($request->input('email'));
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->json([
-                'message' => 'Password reset link sent to your email',
-            ]);
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return response()->json(['message' => "Demasiados intentos. Intenta en {$seconds} segundos."], 429);
         }
 
-        throw ValidationException::withMessages([
-            'email' => [__($status)],
-        ]);
+        RateLimiter::hit($throttleKey, 600);
+
+        $user = User::where('email', $request->input('email'))->first();
+
+        if ($user) {
+            $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+            DB::table('password_reset_codes')->upsert([
+                'email' => $user->email,
+                'code' => Hash::make($code),
+                'expires_at' => now()->addMinutes(15),
+                'attempts' => 0,
+                'created_at' => now(),
+            ], ['email'], ['code', 'expires_at', 'attempts', 'created_at']);
+
+            Mail::to($user->email)->queue(new PasswordResetCodeMail($code));
+        }
+
+        return response()->json(['message' => 'Si el email existe, recibirás un código en breve.']);
     }
 
     /**
-     * Reset user password using token.
+     * Reset user password using a 6-digit code.
      */
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
-                $user->update([
-                    'password' => $password,
-                ]);
+        $entry = DB::table('password_reset_codes')
+            ->where('email', $request->input('email'))
+            ->first();
 
-                $user->tokens()->delete();
-            }
-        );
-
-        if ($status === Password::PASSWORD_RESET) {
-            return response()->json([
-                'message' => 'Password reset successful. Please login with your new password.',
-            ]);
+        if (! $entry || Carbon::parse($entry->expires_at)->isPast()) {
+            return response()->json(['message' => 'Código inválido o expirado.'], 422);
         }
 
-        throw ValidationException::withMessages([
-            'email' => [__($status)],
-        ]);
+        if ($entry->attempts >= 5) {
+            return response()->json(['message' => 'Demasiados intentos. Solicita un nuevo código.'], 429);
+        }
+
+        if (! Hash::check($request->input('code'), $entry->code)) {
+            DB::table('password_reset_codes')
+                ->where('email', $request->input('email'))
+                ->increment('attempts');
+
+            return response()->json(['message' => 'Código inválido o expirado.'], 422);
+        }
+
+        $user = User::where('email', $request->input('email'))->firstOrFail();
+        $user->forceFill(['password' => Hash::make($request->input('password'))])->save();
+
+        DB::table('password_reset_codes')->where('email', $request->input('email'))->delete();
+        $user->tokens()->delete();
+
+        return response()->json(['message' => 'Contraseña actualizada. Inicia sesión.']);
     }
 }

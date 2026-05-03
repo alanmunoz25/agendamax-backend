@@ -95,10 +95,23 @@ class UserController extends Controller
             abort(403, 'Only super admins can assign the super_admin role.');
         }
 
-        $validated['password'] = bcrypt($validated['password']);
-        $validated['email_verified_at'] = now();
+        // role and business_id are excluded from $fillable.
+        // Separate them for explicit forceFill assignment from this trusted action.
+        $roleToAssign = $validated['role'];
+        $businessIdToAssign = $validated['business_id'] ?? null;
 
-        User::create($validated);
+        $user = new User;
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => bcrypt($validated['password']),
+            'phone' => $validated['phone'] ?? null,
+        ]);
+        $user->forceFill([
+            'role' => $roleToAssign,
+            'business_id' => $businessIdToAssign,
+            'email_verified_at' => now(),
+        ])->save();
 
         return redirect()->route('users.index')
             ->with('success', 'User created successfully.');
@@ -139,7 +152,9 @@ class UserController extends Controller
             abort(403, 'Only super admins can assign the super_admin role.');
         }
 
-        $user->update($validated);
+        // role and business_id are excluded from $fillable — use forceFill from
+        // this policy-authorized controller action.
+        $user->forceFill($validated)->save();
 
         return redirect()->route('users.index')
             ->with('success', 'User updated successfully.');

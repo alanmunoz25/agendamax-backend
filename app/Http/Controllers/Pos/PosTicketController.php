@@ -1,0 +1,90 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Pos;
+
+use App\Exceptions\Pos\TicketAlreadyExistsException;
+use App\Exceptions\Pos\TicketNotVoidableException;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Pos\StorePosTicketRequest;
+use App\Http\Requests\Pos\VoidPosTicketRequest;
+use App\Models\PosTicket;
+use App\Services\PosService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class PosTicketController extends Controller
+{
+    public function __construct(
+        private readonly PosService $posService
+    ) {}
+
+    public function index(): Response
+    {
+        $filters = request()->only(['search', 'method', 'ecf_status', 'date']);
+
+        $tickets = PosTicket::query()
+            ->with(['employee.user', 'payments'])
+            ->when($filters['search'] ?? null, function ($q, $search): void {
+                $q->where(function ($inner) use ($search): void {
+                    $inner->where('ticket_number', 'like', "%{$search}%")
+                        ->orWhere('client_name', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['method'] ?? null, function ($q, $method): void {
+                $q->whereHas('payments', fn ($p) => $p->where('method', $method));
+            })
+            ->when($filters['ecf_status'] ?? null, fn ($q, $ecfStatus) => $q->where('ecf_status', $ecfStatus))
+            ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', $date))
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        return Inertia::render('Pos/Tickets/Index', [
+            'tickets' => $tickets,
+            'filters' => $filters,
+        ]);
+    }
+
+    public function store(StorePosTicketRequest $request): RedirectResponse
+    {
+        $user = Auth::user();
+
+        try {
+            $this->posService->createTicket($request->validated(), $user);
+        } catch (TicketAlreadyExistsException $e) {
+            return redirect()->back()->withErrors(['appointment_id' => $e->getMessage()]);
+        }
+
+        return redirect()->route('pos.index')->with('success', 'Cobro registrado correctamente.');
+    }
+
+    public function show(PosTicket $ticket): Response
+    {
+        $ticket->loadMissing(['items', 'payments', 'appointment', 'employee.user', 'cashier']);
+
+        return Inertia::render('Pos/Tickets/Show', [
+            'ticket' => $ticket,
+            'can' => [
+                'void' => $ticket->status === 'paid',
+            ],
+        ]);
+    }
+
+    public function void(VoidPosTicketRequest $request, PosTicket $ticket): RedirectResponse
+    {
+        $user = Auth::user();
+
+        try {
+            $this->posService->voidTicket($ticket, $request->validated('reason'), $user);
+        } catch (TicketNotVoidableException $e) {
+            return redirect()->back()->withErrors(['reason' => $e->getMessage()]);
+        }
+
+        return redirect()->route('pos.tickets.show', $ticket)
+            ->with('success', 'Ticket anulado correctamente.');
+    }
+}

@@ -21,6 +21,14 @@ Broadcast::channel('business.{businessId}', function ($user, int $businessId) {
     return $user->business_id === $businessId;
 });
 
+// Per-employee private channel for payroll notifications (Fase 4 — PASO 7)
+Broadcast::channel('employee.{employeeId}', function ($user, int $employeeId): bool {
+    return \App\Models\Employee::withoutGlobalScopes()
+        ->where('user_id', $user->id)
+        ->where('id', $employeeId)
+        ->exists();
+});
+
 // Per-user private channel (default Laravel channel)
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
