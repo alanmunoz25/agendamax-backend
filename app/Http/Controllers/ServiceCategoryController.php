@@ -79,7 +79,7 @@ class ServiceCategoryController extends Controller
 
         ServiceCategory::create([
             ...$data,
-            'business_id' => auth()->user()->business_id,
+            'business_id' => auth()->user()->primary_business_id,
         ]);
 
         return redirect()->route('service-categories.index')

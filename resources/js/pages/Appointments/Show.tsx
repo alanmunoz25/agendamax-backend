@@ -11,6 +11,14 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -18,7 +26,9 @@ import {
 } from '@/components/ui/dialog';
 import { ConfirmationModal } from '@/components/confirmation-modal';
 import { CheckoutDrawer } from '@/components/pos/checkout-drawer';
-import type { Appointment, Service } from '@/types/models';
+import { AddAppointmentServiceModal, type EmployeeWithServices } from './components/AddAppointmentServiceModal';
+import { AssignEmployeeModal, type AppointmentServiceForAssign } from './components/AssignEmployeeModal';
+import type { Appointment } from '@/types/models';
 import {
     Edit,
     Trash2,
@@ -32,13 +42,33 @@ import {
     FilePlus,
     Loader,
     ShoppingCart,
+    AlertTriangle,
+    Plus,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
 
 interface EcfSummary {
     id: number;
     ncf: string;
     status: string;
     issued_at: string;
+}
+
+interface AppointmentServiceLine {
+    id: number;
+    service: {
+        id: number;
+        name: string;
+        price: number | string;
+        duration: number;
+        category?: string | null;
+    };
+    employee: {
+        id: number;
+        name: string;
+        photo_url: string | null;
+    } | null;
 }
 
 interface Props {
@@ -52,20 +82,31 @@ interface Props {
     ecf?: EcfSummary | null;
     employees_for_checkout: Array<{ id: number; user: { name: string } }>;
     ecf_enabled: boolean;
+    appointment_service_lines: AppointmentServiceLine[];
+    employees_with_services: EmployeeWithServices[];
 }
 
-export default function ShowAppointment({ appointment, can, ecf, employees_for_checkout, ecf_enabled }: Props) {
+export default function ShowAppointment({
+    appointment,
+    can,
+    ecf,
+    employees_for_checkout,
+    ecf_enabled,
+    appointment_service_lines,
+    employees_with_services,
+}: Props) {
+    const { t } = useTranslation();
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showEcfModal, setShowEcfModal] = useState(false);
     const [showCheckoutDrawer, setShowCheckoutDrawer] = useState(false);
+    const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [assignTargetLine, setAssignTargetLine] = useState<AppointmentServiceForAssign | null>(null);
 
-    const appointmentServices: Array<{ description: string; qty: number; unit_price: string; discount_pct: string }> =
-        (appointment.services ?? []).map((svc) => ({
-            description: svc.name,
-            qty: 1,
-            unit_price: String(svc.price),
-            discount_pct: '0',
-        }));
+    const openAssignModal = (line: AppointmentServiceForAssign) => {
+        setAssignTargetLine(line);
+        setShowAssignModal(true);
+    };
 
     const handleCancel = () => {
         router.delete(`/appointments/${appointment.id}`, {
@@ -84,17 +125,28 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
         return colors[status] || 'default';
     };
 
+    const getStatusLabel = (status: string) => {
+        const map: Record<string, string> = {
+            pending: t('appointments.status_pending'),
+            confirmed: t('appointments.status_confirmed'),
+            in_progress: t('appointments.status_in_progress'),
+            completed: t('appointments.status_completed'),
+            cancelled: t('appointments.status_cancelled'),
+        };
+        return map[status] ?? status;
+    };
+
     const isEditable =
         appointment.status !== 'cancelled' &&
         appointment.status !== 'completed';
 
     return (
         <AppLayout
-            title={`Appointment #${appointment.id}`}
+            title={`${t('appointments.show_title')} #${appointment.id}`}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Appointments', href: '/appointments' },
-                { label: `Appointment #${appointment.id}` },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.appointments'), href: '/appointments' },
+                { label: `${t('appointments.show_title')} #${appointment.id}` },
             ]}
         >
             <div className="mx-auto max-w-4xl space-y-6">
@@ -103,22 +155,15 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                                Appointment #{appointment.id}
+                                {t('appointments.show_title')} #{appointment.id}
                             </h1>
                             <Badge variant={getStatusColor(appointment.status)}>
-                                {appointment.status.replace('_', ' ')}
+                                {getStatusLabel(appointment.status)}
                             </Badge>
                         </div>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Scheduled for{' '}
-                            {new Date(
-                                appointment.scheduled_at
-                            ).toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                            })}
+                            {t('appointments.scheduled_for')}{' '}
+                            {format(new Date(appointment.scheduled_at), 'EEEE, dd/MM/yyyy')}
                         </p>
                     </div>
 
@@ -126,7 +171,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                         {/* POS Checkout */}
                         {appointment.ticket_id !== null && (
                             <Badge className="bg-[var(--color-green-brand)]/10 text-[var(--color-green-brand)]">
-                                ✓ Cobrada
+                                ✓ {t('appointments.collected_badge')}
                             </Badge>
                         )}
                         {can.checkout && appointment.ticket_id === null && appointment.status === 'completed' && (
@@ -135,13 +180,13 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                                 className="bg-[var(--color-amber-brand)] hover:bg-[var(--color-amber-brand)]/90 text-white"
                             >
                                 <ShoppingCart className="mr-2 h-4 w-4" />
-                                Cobrar ●
+                                {t('pos.charge')} ●
                             </Button>
                         )}
                         {can.checkout && appointment.ticket_id === null && appointment.status !== 'completed' && (
                             <Button variant="outline" onClick={() => setShowCheckoutDrawer(true)}>
                                 <ShoppingCart className="mr-2 h-4 w-4" />
-                                Cobrar
+                                {t('pos.charge')}
                             </Button>
                         )}
 
@@ -152,13 +197,13 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                                 onClick={() => setShowEcfModal(true)}
                             >
                                 <FilePlus className="mr-2 h-4 w-4" />
-                                Emitir e-CF
+                                {t('appointments.issue_ecf')}
                             </Button>
                         )}
                         {ecf && (ecf.status === 'draft' || ecf.status === 'signed' || ecf.status === 'sent') && (
                             <Button variant="outline" disabled>
                                 <Loader className="mr-2 h-4 w-4 animate-spin" />
-                                e-CF en proceso
+                                {t('appointments.ecf_in_progress')}
                             </Button>
                         )}
                         {ecf && ecf.status === 'accepted' && (
@@ -171,7 +216,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                                 }
                             >
                                 <FileText className="mr-2 h-4 w-4" />
-                                Ver e-CF #{ecf.ncf} →
+                                {t('appointments.view_ecf', { ncf: ecf.ncf })} →
                             </Button>
                         )}
                         {ecf && (ecf.status === 'rejected' || ecf.status === 'error') && (
@@ -184,7 +229,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                                 }
                             >
                                 <FileText className="mr-2 h-4 w-4" />
-                                e-CF Rechazado — Ver →
+                                {t('appointments.ecf_rejected')} →
                             </Button>
                         )}
 
@@ -198,7 +243,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                                 }
                             >
                                 <Edit className="mr-2 h-4 w-4" />
-                                Edit
+                                {t('common.edit')}
                             </Button>
                         )}
                         {can.cancel && isEditable && (
@@ -207,7 +252,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                                 onClick={() => setShowCancelModal(true)}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Cancel
+                                {t('appointments.cancel_btn')}
                             </Button>
                         )}
                     </div>
@@ -219,13 +264,13 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <UserIcon className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Client Information</CardTitle>
+                                <CardTitle>{t('appointments.client_card_title')}</CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Name
+                                    {t('common.name')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
                                     {appointment.client?.name}
@@ -233,7 +278,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Email
+                                    {t('common.email')}
                                 </p>
                                 <a
                                     href={`mailto:${appointment.client?.email}`}
@@ -245,7 +290,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                             {appointment.client?.phone && (
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">
-                                        Phone
+                                        {t('common.phone')}
                                     </p>
                                     <a
                                         href={`tel:${appointment.client.phone}`}
@@ -258,178 +303,220 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                         </CardContent>
                     </Card>
 
-                    {/* Service Information */}
-                    <Card>
+                    {/* Services — full width, Mejoras #3 + #4 */}
+                    <Card className="md:col-span-2">
                         <CardHeader>
-                            <div className="flex items-center gap-2">
-                                <Briefcase className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>
-                                    {appointment.services && appointment.services.length > 1
-                                        ? `Services (${appointment.services.length})`
-                                        : 'Service Details'}
-                                </CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {appointment.services && appointment.services.length > 0 ? (
-                                appointment.services.map((svc, index) => (
-                                    <div
-                                        key={svc.id}
-                                        className={index > 0 ? 'border-t pt-4' : ''}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Briefcase className="h-5 w-5 text-muted-foreground" />
+                                    <CardTitle>
+                                        {appointment_service_lines.length > 0
+                                            ? `${t('appointments.services_card_title')} (${appointment_service_lines.length})`
+                                            : t('appointments.services_card_title')}
+                                    </CardTitle>
+                                </div>
+                                {can.edit && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowAddServiceModal(true)}
                                     >
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">
-                                                Service
-                                            </p>
-                                            <p className="mt-1 text-base text-foreground">
-                                                {svc.name}
-                                            </p>
-                                            {svc.category && (
-                                                <p className="mt-1 text-sm text-muted-foreground">
-                                                    {svc.category}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="mt-2 grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">
-                                                    Duration
-                                                </p>
-                                                <div className="mt-1 flex items-center gap-1 text-base text-foreground">
-                                                    <Clock className="h-4 w-4" />
-                                                    {svc.duration} min
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">
-                                                    Price
-                                                </p>
-                                                <div className="mt-1 flex items-center gap-1 text-base text-foreground">
-                                                    <DollarSign className="h-4 w-4" />
-                                                    {svc.price}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : appointment.service ? (
-                                <>
-                                    <div>
-                                        <p className="text-sm font-medium text-muted-foreground">
-                                            Service
-                                        </p>
-                                        <p className="mt-1 text-base text-foreground">
-                                            {appointment.service.name}
-                                        </p>
-                                        {appointment.service.category && (
-                                            <p className="mt-1 text-sm text-muted-foreground">
-                                                {appointment.service.category}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">
-                                                Duration
-                                            </p>
-                                            <div className="mt-1 flex items-center gap-1 text-base text-foreground">
-                                                <Clock className="h-4 w-4" />
-                                                {appointment.service.duration} min
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">
-                                                Price
-                                            </p>
-                                            <div className="mt-1 flex items-center gap-1 text-base text-foreground">
-                                                <DollarSign className="h-4 w-4" />
-                                                {appointment.service.price}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : null}
-                        </CardContent>
-                    </Card>
-
-                    {/* Employee Information */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-2">
-                                <UserIcon className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Service Provider</CardTitle>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        {t('appointments.add_service_btn')}
+                                    </Button>
+                                )}
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex items-center gap-3">
-                                {appointment.employee?.photo_url ? (
-                                    <img
-                                        src={appointment.employee.photo_url}
-                                        alt={appointment.employee.user?.name}
-                                        className="h-12 w-12 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                                        <UserIcon className="h-6 w-6 text-muted-foreground" />
-                                    </div>
-                                )}
-                                <div>
-                                    <p className="font-medium text-foreground">
-                                        {appointment.employee?.user?.name}
-                                    </p>
+                            {appointment_service_lines.length === 0 ? (
+                                <div className="py-10 text-center">
+                                    <Briefcase className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
                                     <p className="text-sm text-muted-foreground">
-                                        {appointment.employee?.user?.email}
+                                        {t('appointments.no_services_added')}
                                     </p>
+                                    {can.edit && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="mt-4"
+                                            onClick={() => setShowAddServiceModal(true)}
+                                        >
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            {t('appointments.add_service_btn')}
+                                        </Button>
+                                    )}
                                 </div>
-                            </div>
+                            ) : (
+                                <>
+                                    {/* Desktop table */}
+                                    <div className="hidden sm:block">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>{t('appointments.services_card_col_service')}</TableHead>
+                                                    <TableHead>{t('appointments.services_card_col_employee')}</TableHead>
+                                                    <TableHead>{t('appointments.services_card_col_price')}</TableHead>
+                                                    <TableHead>{t('appointments.services_card_col_duration')}</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {appointment_service_lines.map((line) => (
+                                                    <TableRow key={line.id}>
+                                                        <TableCell className="font-medium">
+                                                            {line.service.name}
+                                                            {line.service.category && (
+                                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                                    {line.service.category}
+                                                                </span>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {line.employee ? (
+                                                                <div className="flex flex-col gap-1">
+                                                                    <span className="flex items-center gap-1.5">
+                                                                        <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                                                                        {line.employee.name}
+                                                                    </span>
+                                                                    {can.edit && (
+                                                                        <button
+                                                                            type="button"
+                                                                            className="text-left text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                                                                            onClick={() => openAssignModal({ id: line.id, service: line.service, employee: line.employee })}
+                                                                        >
+                                                                            {t('appointments.service.change_employee')} →
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex flex-col gap-1">
+                                                                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                                                        <AlertTriangle className="h-4 w-4" />
+                                                                        <span className="text-sm">
+                                                                            {t('appointments.service.no_employee_warning')}
+                                                                        </span>
+                                                                    </span>
+                                                                    {can.edit && (
+                                                                        <button
+                                                                            type="button"
+                                                                            className="text-left text-xs text-orange-600 underline-offset-2 hover:text-orange-700 hover:underline"
+                                                                            onClick={() => openAssignModal({ id: line.id, service: line.service, employee: null })}
+                                                                        >
+                                                                            {t('appointments.service.assign_employee')} →
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <span className="flex items-center gap-1">
+                                                                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                RD${Number(line.service.price).toFixed(2)}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <span className="flex items-center gap-1">
+                                                                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                {line.service.duration} min
+                                                            </span>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+
+                                    {/* Mobile stack */}
+                                    <div className="space-y-3 sm:hidden">
+                                        {appointment_service_lines.map((line) => (
+                                            <div
+                                                key={line.id}
+                                                className="rounded-lg border border-border bg-muted/30 p-3"
+                                            >
+                                                <p className="font-medium text-foreground">
+                                                    {line.service.name}
+                                                </p>
+                                                {line.service.category && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {line.service.category}
+                                                    </p>
+                                                )}
+                                                <div className="mt-2 space-y-1 text-sm">
+                                                    {line.employee ? (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <p className="flex items-center gap-1.5 text-foreground">
+                                                                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                                                                {line.employee.name}
+                                                            </p>
+                                                            {can.edit && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-left text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                                                                    onClick={() => openAssignModal({ id: line.id, service: line.service, employee: line.employee })}
+                                                                >
+                                                                    {t('appointments.service.change_employee')} →
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <p className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                                                <AlertTriangle className="h-4 w-4" />
+                                                                {t('appointments.service.no_employee_warning')}
+                                                            </p>
+                                                            {can.edit && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-left text-xs text-orange-600 underline-offset-2 hover:text-orange-700 hover:underline"
+                                                                    onClick={() => openAssignModal({ id: line.id, service: line.service, employee: null })}
+                                                                >
+                                                                    {t('appointments.service.assign_employee')} →
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <p className="flex items-center gap-1 text-muted-foreground">
+                                                        <DollarSign className="h-3.5 w-3.5" />
+                                                        RD${Number(line.service.price).toFixed(2)}
+                                                        <Clock className="ml-2 h-3.5 w-3.5" />
+                                                        {line.service.duration} min
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
 
-                    {/* Schedule Information */}
+                    {/* Additional Information — schedule + compact layout */}
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Calendar className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Schedule</CardTitle>
+                                <CardTitle>{t('appointments.additional_info_card_title')}</CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Date
+                                    {t('common.date')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
-                                    {new Date(
-                                        appointment.scheduled_at
-                                    ).toLocaleDateString('en-US', {
-                                        weekday: 'long',
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    })}
+                                    {format(new Date(appointment.scheduled_at), 'EEEE, dd/MM/yyyy')}
                                 </p>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Time
+                                    {t('appointments.time_label')}
                                 </p>
                                 <div className="mt-1 flex items-center gap-1 text-base text-foreground">
                                     <Clock className="h-4 w-4" />
-                                    {new Date(
-                                        appointment.scheduled_at
-                                    ).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
+                                    {format(new Date(appointment.scheduled_at), 'HH:mm')}
                                     {appointment.scheduled_until && (
                                         <>
                                             {' - '}
-                                            {new Date(
-                                                appointment.scheduled_until
-                                            ).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
+                                            {format(new Date(appointment.scheduled_until), 'HH:mm')}
                                         </>
                                     )}
                                 </div>
@@ -437,53 +524,33 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                         </CardContent>
                     </Card>
 
-                    {/* Notes */}
-                    {appointment.notes && (
-                        <Card className="md:col-span-2">
-                            <CardHeader>
-                                <div className="flex items-center gap-2">
-                                    <FileText className="h-5 w-5 text-muted-foreground" />
-                                    <CardTitle>Notes</CardTitle>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-muted-foreground">
-                                    {appointment.notes}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
-
                     {/* Visit Information (if exists) */}
                     {appointment.visit && (
                         <Card className="md:col-span-2">
                             <CardHeader>
                                 <div className="flex items-center gap-2">
                                     <QrCode className="h-5 w-5 text-muted-foreground" />
-                                    <CardTitle>Visit Verification</CardTitle>
+                                    <CardTitle>{t('appointments.visit_card_title')}</CardTitle>
                                 </div>
                                 <CardDescription>
-                                    This appointment has been verified with a client
-                                    visit
+                                    {t('appointments.visit_card_desc')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">
-                                        Verified At
+                                        {t('appointments.verified_at')}
                                     </p>
                                     <p className="mt-1 text-base text-foreground">
-                                        {new Date(
-                                            appointment.visit.verified_at
-                                        ).toLocaleString()}
+                                        {format(new Date(appointment.visit.verified_at), 'dd/MM/yyyy HH:mm')}
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">
-                                        Stamp Earned
+                                        {t('appointments.stamp_earned')}
                                     </p>
                                     <p className="mt-1 text-base text-foreground">
-                                        Yes
+                                        {t('common.yes')}
                                     </p>
                                 </div>
                             </CardContent>
@@ -493,39 +560,35 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                     {/* Metadata */}
                     <Card className="md:col-span-2">
                         <CardHeader>
-                            <CardTitle>Additional Information</CardTitle>
+                            <CardTitle>{t('employees.additional_info_title')}</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4 sm:grid-cols-3">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Status
+                                    {t('common.status')}
                                 </p>
                                 <p className="mt-1 text-base">
                                     <Badge
                                         variant={getStatusColor(appointment.status)}
                                     >
-                                        {appointment.status.replace('_', ' ')}
+                                        {getStatusLabel(appointment.status)}
                                     </Badge>
                                 </p>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Created
+                                    {t('common.created_at')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
-                                    {new Date(
-                                        appointment.created_at
-                                    ).toLocaleDateString()}
+                                    {format(new Date(appointment.created_at), 'dd/MM/yyyy')}
                                 </p>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Last Updated
+                                    {t('common.updated_at')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
-                                    {new Date(
-                                        appointment.updated_at
-                                    ).toLocaleDateString()}
+                                    {format(new Date(appointment.updated_at), 'dd/MM/yyyy')}
                                 </p>
                             </div>
                         </CardContent>
@@ -537,46 +600,42 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
             <ConfirmationModal
                 open={showCancelModal}
                 onOpenChange={setShowCancelModal}
-                title="Cancel Appointment"
+                title={t('appointments.cancel_modal_title')}
                 description={
                     <div className="space-y-2">
                         <p>
-                            Are you sure you want to cancel this appointment with{' '}
-                            <span className="font-semibold">
-                                {appointment.client?.name}
-                            </span>
-                            ?
+                            {t('appointments.cancel_modal_description', { client: appointment.client?.name })}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            The client will be notified of the cancellation.
+                            {t('appointments.cancel_modal_note')}
                         </p>
                     </div>
                 }
-                confirmLabel="Cancel Appointment"
-                cancelLabel="Keep Appointment"
+                confirmLabel={t('appointments.cancel_confirm')}
+                cancelLabel={t('appointments.cancel_keep')}
                 onConfirm={handleCancel}
                 variant="destructive"
             />
 
-            {/* e-CF Wizard Modal — redirect to create page with appointment context */}
+            {/* e-CF Wizard Modal */}
             <Dialog open={showEcfModal} onOpenChange={setShowEcfModal}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Emitir Comprobante Fiscal Electrónico</DialogTitle>
+                        <DialogTitle>{t('appointments.ecf_modal_title')}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <p className="text-sm text-muted-foreground">
-                            Se abrirá el asistente de emisión de e-CF con los datos de este appointment pre-cargados.
+                            {t('appointments.ecf_modal_desc')}
                         </p>
                         <div className="rounded-md bg-muted p-3 text-sm">
-                            <p><span className="text-muted-foreground">Cliente:</span> {appointment.client?.name}</p>
+                            <p><span className="text-muted-foreground">{t('appointments.client_label')}:</span> {appointment.client?.name}</p>
                             {(appointment.services?.length ?? 0) > 0 && (
-                                <p><span className="text-muted-foreground">Servicios:</span> {appointment.services?.map((s) => s.name).join(', ')}</p>
+                                <p><span className="text-muted-foreground">{t('appointments.col_service')}:</span> {appointment.services?.map((s) => s.name).join(', ')}</p>
                             )}
                         </div>
                         <div className="flex justify-end gap-3">
                             <Button variant="outline" onClick={() => setShowEcfModal(false)}>
-                                Cancelar
+                                {t('common.cancel')}
                             </Button>
                             <Button
                                 onClick={() => {
@@ -585,7 +644,7 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                                 }}
                             >
                                 <FilePlus className="mr-2 h-4 w-4" />
-                                Ir al Asistente →
+                                {t('appointments.go_to_ecf_wizard')} →
                             </Button>
                         </div>
                     </div>
@@ -598,11 +657,11 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                 onOpenChange={setShowCheckoutDrawer}
                 source="appointment"
                 appointmentId={appointment.id}
-                initialItems={(appointment.services ?? []).map((svc) => ({
-                    id: svc.id,
+                initialItems={appointment_service_lines.map((line) => ({
+                    id: line.service.id,
                     type: 'service' as const,
-                    name: svc.name,
-                    unit_price: String(svc.price),
+                    name: line.service.name,
+                    unit_price: String(line.service.price),
                     qty: 1,
                 }))}
                 client={appointment.client ?? null}
@@ -613,6 +672,27 @@ export default function ShowAppointment({ appointment, can, ecf, employees_for_c
                     setShowCheckoutDrawer(false);
                     router.reload();
                 }}
+            />
+
+            {/* Add Service Modal — Mejora #4 */}
+            <AddAppointmentServiceModal
+                open={showAddServiceModal}
+                onOpenChange={setShowAddServiceModal}
+                appointmentId={appointment.id}
+                existingServiceIds={appointment_service_lines.map((l) => l.service.id)}
+                employees={employees_with_services}
+            />
+
+            {/* Assign / Change Employee Modal */}
+            <AssignEmployeeModal
+                open={showAssignModal}
+                onOpenChange={(open) => {
+                    setShowAssignModal(open);
+                    if (!open) setAssignTargetLine(null);
+                }}
+                appointmentId={appointment.id}
+                appointmentService={assignTargetLine}
+                employees={employees_with_services}
             />
         </AppLayout>
     );

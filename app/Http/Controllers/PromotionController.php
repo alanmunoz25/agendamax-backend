@@ -63,7 +63,7 @@ class PromotionController extends Controller
         $imagePath = $request->file('image')->store('promotions', 'public');
 
         Promotion::create([
-            'business_id' => auth()->user()->business_id,
+            'business_id' => auth()->user()->primary_business_id,
             'title' => $data['title'],
             'image_path' => $imagePath,
             'url' => $data['url'] ?? null,

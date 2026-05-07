@@ -129,7 +129,7 @@ class EnrollmentControllerTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'newlead@example.com',
             'role' => 'lead',
-            'business_id' => $this->business->id,
+            'primary_business_id' => $this->business->id,
         ]);
     }
 

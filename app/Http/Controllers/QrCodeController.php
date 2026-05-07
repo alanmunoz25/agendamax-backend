@@ -56,7 +56,7 @@ class QrCodeController extends Controller
         $imagePath = $this->generateQrImage($code);
 
         $qrCode = QrCode::create([
-            'business_id' => $user->business_id,
+            'business_id' => $user->primary_business_id,
             'code' => $code,
             'type' => 'visit',
             'reward_description' => $validated['reward_description'],

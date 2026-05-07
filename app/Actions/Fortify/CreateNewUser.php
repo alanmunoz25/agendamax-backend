@@ -23,7 +23,7 @@ class CreateNewUser implements CreatesNewUsers
         $businessId = config('app.default_business_id');
 
         $emailRule = $businessId
-            ? Rule::unique('users', 'email')->where('business_id', $businessId)
+            ? Rule::unique('users', 'email')->where('primary_business_id', $businessId)
             : Rule::unique(User::class);
 
         Validator::make($input, [

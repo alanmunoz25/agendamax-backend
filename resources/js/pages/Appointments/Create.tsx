@@ -1,6 +1,7 @@
 import { FormEventHandler, useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +36,7 @@ export default function CreateAppointment({
     services,
     clients,
 }: Props) {
+    const { t } = useTranslation();
     const { data, setData, post, processing, errors, isDirty, transform } =
         useForm({
             client_id: '',
@@ -73,7 +75,7 @@ export default function CreateAppointment({
     // Group services by category
     const servicesByCategory = services.reduce(
         (acc, service) => {
-            const category = service.category || 'Uncategorized';
+            const category = service.category || t('common.uncategorized');
             if (!acc[category]) {
                 acc[category] = [];
             }
@@ -85,21 +87,21 @@ export default function CreateAppointment({
 
     return (
         <AppLayout
-            title="Create Appointment"
+            title={t('appointments.create_title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Appointments', href: '/appointments' },
-                { label: 'Create' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.appointments'), href: '/appointments' },
+                { label: t('breadcrumbs.create') },
             ]}
         >
             <div className="mx-auto max-w-2xl space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        New Appointment
+                        {t('appointments.create_title')}
                     </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Schedule a new appointment for a client
+                        {t('appointments.create_subtitle')}
                     </p>
                 </div>
 
@@ -109,16 +111,16 @@ export default function CreateAppointment({
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Users className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Client Information</CardTitle>
+                                <CardTitle>{t('appointments.client_section')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Select the client for this appointment
+                                {t('appointments.client_section_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="client_id" required>
-                                    Client
+                                    {t('appointments.client_label')}
                                 </Label>
                                 <ClientSearchSelect
                                     clients={clients}
@@ -130,7 +132,7 @@ export default function CreateAppointment({
                                     onChange={(value) =>
                                         setData('client_id', value.toString())
                                     }
-                                    placeholder="Search and select a client"
+                                    placeholder={t('appointments.client_placeholder')}
                                 />
                                 <InputError message={errors.client_id} />
                             </div>
@@ -142,16 +144,16 @@ export default function CreateAppointment({
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Briefcase className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Service & Provider</CardTitle>
+                                <CardTitle>{t('appointments.service_section')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Choose the service and employee
+                                {t('appointments.service_section_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="service_id" required>
-                                    Service
+                                    {t('appointments.service_label')}
                                 </Label>
                                 <Select
                                     value={data.service_id}
@@ -160,7 +162,7 @@ export default function CreateAppointment({
                                     }
                                 >
                                     <SelectTrigger id="service_id">
-                                        <SelectValue placeholder="Select a service" />
+                                        <SelectValue placeholder={t('appointments.service_placeholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {Object.entries(servicesByCategory).map(
@@ -206,15 +208,15 @@ export default function CreateAppointment({
                                     <div className="rounded-md bg-muted p-3">
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">
-                                                Duration:
+                                                {t('appointments.duration')}:
                                             </span>
                                             <span className="font-medium text-foreground">
-                                                {selectedService.duration} minutes
+                                                {t('appointments.duration_minutes', { minutes: selectedService.duration })}
                                             </span>
                                         </div>
                                         <div className="mt-1 flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">
-                                                Price:
+                                                {t('appointments.price')}:
                                             </span>
                                             <span className="font-medium text-foreground">
                                                 ${selectedService.price}
@@ -226,7 +228,7 @@ export default function CreateAppointment({
 
                             <div className="space-y-2">
                                 <Label htmlFor="employee_id">
-                                    Employee
+                                    {t('appointments.employee_label')}
                                 </Label>
                                 <Select
                                     value={data.employee_id}
@@ -235,11 +237,11 @@ export default function CreateAppointment({
                                     }
                                 >
                                     <SelectTrigger id="employee_id">
-                                        <SelectValue placeholder="Select an employee" />
+                                        <SelectValue placeholder={t('appointments.employee_placeholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="none">
-                                            Sin preferencia
+                                            {t('appointments.no_preference')}
                                         </SelectItem>
                                         {employees.map((employee) => (
                                             <SelectItem
@@ -261,42 +263,42 @@ export default function CreateAppointment({
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Clock className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Date & Time</CardTitle>
+                                <CardTitle>{t('appointments.datetime_section')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Choose when the appointment will take place
+                                {t('appointments.datetime_section_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="scheduled_at" required>
-                                    Appointment Date & Time
+                                    {t('appointments.datetime_label')}
                                 </Label>
                                 <DateTimePicker
                                     value={data.scheduled_at}
                                     onChange={(value) =>
                                         setData('scheduled_at', value)
                                     }
-                                    placeholder="Pick a date and time"
+                                    placeholder={t('appointments.datetime_placeholder')}
                                     minDate={new Date()}
                                 />
                                 <InputError message={errors.scheduled_at} />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="notes">Notes</Label>
+                                <Label htmlFor="notes">{t('appointments.notes_label')}</Label>
                                 <Textarea
                                     id="notes"
                                     value={data.notes}
                                     onChange={(e) =>
                                         setData('notes', e.target.value)
                                     }
-                                    placeholder="Any special requests or notes..."
+                                    placeholder={t('appointments.notes_placeholder')}
                                     rows={3}
                                 />
                                 <InputError message={errors.notes} />
                                 <p className="text-xs text-muted-foreground">
-                                    Optional notes about the appointment
+                                    {t('appointments.notes_hint')}
                                 </p>
                             </div>
                         </CardContent>
@@ -310,11 +312,11 @@ export default function CreateAppointment({
                             onClick={() => window.history.back()}
                             disabled={processing}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
                             <CalendarPlus className="mr-2 h-4 w-4" />
-                            {processing ? 'Creating...' : 'Create Appointment'}
+                            {processing ? t('common.creating') : t('appointments.new')}
                         </Button>
                     </div>
                 </form>

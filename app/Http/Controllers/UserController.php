@@ -24,7 +24,7 @@ class UserController extends Controller
 
         // Super admin sees all users; business_admin sees only their business users
         if (! $request->user()->isSuperAdmin()) {
-            $query->where('business_id', $request->user()->business_id);
+            $query->where('primary_business_id', $request->user()->primary_business_id);
         }
 
         if ($request->filled('search')) {
@@ -40,7 +40,7 @@ class UserController extends Controller
         }
 
         if ($request->filled('business_id')) {
-            $query->where('business_id', $request->integer('business_id'));
+            $query->where('primary_business_id', $request->integer('business_id'));
         }
 
         $users = $query->with('business')

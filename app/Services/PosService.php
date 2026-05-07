@@ -8,6 +8,8 @@ use App\Exceptions\Pos\TicketAlreadyExistsException;
 use App\Exceptions\Pos\TicketNotVoidableException;
 use App\Jobs\EmitEcfJob;
 use App\Models\Appointment;
+use App\Models\Business;
+use App\Models\Employee;
 use App\Models\PosPayment;
 use App\Models\PosTicket;
 use App\Models\PosTicketItem;
@@ -15,11 +17,13 @@ use App\Models\Service;
 use App\Models\Tip;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PosService
 {
     public function __construct(
-        private readonly CommissionService $commissionService
+        private readonly CommissionService $commissionService,
+        private readonly PayrollService $payrollService
     ) {}
 
     /**
@@ -45,8 +49,8 @@ class PosService
     public function createTicket(array $data, User $cashier): PosTicket
     {
         // super_admin has no implicit business — must supply business_id in $data.
-        // Regular users fall back to their own business_id.
-        $businessId = $data['business_id'] ?? $cashier->business_id;
+        // Regular users fall back to their own primary_business_id.
+        $businessId = $data['business_id'] ?? $cashier->primary_business_id;
 
         if ($businessId === null) {
             throw new \DomainException(
@@ -194,10 +198,14 @@ class PosService
                 ]);
 
                 // Generate commissions for appointment-driven tickets
-                $this->commissionService->generateForAppointment($appointment->fresh());
+                $commissionRecords = $this->commissionService->generateForAppointment($appointment->fresh());
+
+                // Auto-assign commissions to open period + upsert PayrollRecord per employee.
+                // The appointment is now paid (ticket just created), so commissions are payable immediately.
+                $this->autoAssignPayrollForCommissions($commissionRecords, $businessId);
             } else {
                 // Walk-in: generate per-item commissions if business allows it
-                $business = $cashier->business;
+                $business = Business::withoutGlobalScopes()->find($businessId) ?? $cashier->business;
                 if ($business !== null && $business->pos_commissions_enabled) {
                     foreach ($data['items'] as $item) {
                         if (
@@ -205,7 +213,7 @@ class PosService
                             && ! empty($item['employee_id'])
                             && ! empty($item['item_id'])
                         ) {
-                            $employee = \App\Models\Employee::withoutGlobalScopes()
+                            $employee = Employee::withoutGlobalScopes()
                                 ->where('id', $item['employee_id'])
                                 ->where('business_id', $businessId)
                                 ->first();
@@ -231,6 +239,50 @@ class PosService
 
             return $ticket->load(['items', 'payments']);
         });
+    }
+
+    /**
+     * Group commission records by employee and upsert one PayrollRecord per employee.
+     * Ensures an open period exists for today for the business before assigning.
+     * Errors are caught and logged — a payroll upsert failure must not roll back the ticket creation.
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\CommissionRecord>  $commissionRecords
+     */
+    private function autoAssignPayrollForCommissions(
+        \Illuminate\Support\Collection $commissionRecords,
+        int $businessId
+    ): void {
+        if ($commissionRecords->isEmpty()) {
+            return;
+        }
+
+        try {
+            $business = Business::withoutGlobalScopes()->find($businessId);
+
+            if ($business === null) {
+                Log::warning('PosService: cannot auto-assign payroll — business not found', [
+                    'business_id' => $businessId,
+                ]);
+
+                return;
+            }
+
+            $period = $this->payrollService->ensureOpenPeriodForToday($business);
+
+            // Group by employee_id and upsert one record per employee.
+            $commissionRecords->groupBy('employee_id')->each(
+                function (\Illuminate\Support\Collection $records, int $employeeId) use ($period): void {
+                    $this->payrollService->upsertEmployeeRecord($employeeId, $period, $records);
+                }
+            );
+        } catch (\Throwable $e) {
+            Log::error('PosService: failed to auto-assign payroll for commission records', [
+                'business_id' => $businessId,
+                'commission_ids' => $commissionRecords->pluck('id')->all(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 
     /**

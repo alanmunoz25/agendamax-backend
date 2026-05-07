@@ -6,25 +6,28 @@ import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { store } from '@/routes/password/confirm';
 import { Form, Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 export default function ConfirmPassword() {
+    const { t } = useTranslation();
+
     return (
         <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area of the application. Please confirm your password before continuing."
+            title={t('auth_confirm_password.title')}
+            description={t('auth_confirm_password.description')}
         >
-            <Head title="Confirm password" />
+            <Head title={t('auth_confirm_password.title')} />
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t('auth_confirm_password.password_label')}</Label>
                             <Input
                                 id="password"
                                 type="password"
                                 name="password"
-                                placeholder="Password"
+                                placeholder={t('auth_confirm_password.password_label')}
                                 autoComplete="current-password"
                                 autoFocus
                             />
@@ -39,7 +42,7 @@ export default function ConfirmPassword() {
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}
-                                Confirm password
+                                {t('auth_confirm_password.confirm_btn')}
                             </Button>
                         </div>
                     </div>

@@ -224,7 +224,7 @@ class ClientControllerTest extends TestCase
             'email' => 'newclient@test.com',
             'phone' => '+9876543210',
             'avatar_url' => 'https://example.com/avatar.jpg',
-            'business_id' => $this->business->id,
+            'primary_business_id' => $this->business->id,
             'role' => 'client',
         ]);
     }
@@ -284,7 +284,7 @@ class ClientControllerTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'client@test.com',
-            'business_id' => $this->otherBusiness->id,
+            'primary_business_id' => $this->otherBusiness->id,
         ]);
     }
 
@@ -314,7 +314,7 @@ class ClientControllerTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'phone' => '+1234567890',
-            'business_id' => $this->otherBusiness->id,
+            'primary_business_id' => $this->otherBusiness->id,
         ]);
     }
 

@@ -11,6 +11,7 @@ use App\Models\PosTicket;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PosTicketTest extends TestCase
@@ -60,6 +61,17 @@ class PosTicketTest extends TestCase
         $client = User::factory()->create([
             'business_id' => $this->business->id,
             'role' => 'client',
+        ]);
+
+        // Enroll client in the business via the pivot table.
+        DB::table('user_business')->insertOrIgnore([
+            'user_id' => $client->id,
+            'business_id' => $this->business->id,
+            'role_in_business' => 'client',
+            'status' => 'active',
+            'joined_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $appointment = Appointment::factory()->create([

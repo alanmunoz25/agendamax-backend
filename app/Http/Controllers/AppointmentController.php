@@ -108,14 +108,12 @@ class AppointmentController extends Controller
             if (! $user->isEmployee()) {
                 $employees = Employee::query()
                     ->with('user:id,name')
-                    ->where('business_id', $user->business_id)
                     ->where('is_active', true)
                     ->orderBy('id')
                     ->get(['id', 'user_id']);
             }
 
             $services = Service::query()
-                ->where('business_id', $user->business_id)
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name']);
@@ -160,19 +158,18 @@ class AppointmentController extends Controller
 
         $employees = Employee::query()
             ->with('user:id,name,email')
-            ->where('business_id', auth()->user()->business_id)
             ->where('is_active', true)
             ->get(['id', 'user_id', 'photo_url']);
 
         $services = Service::query()
-            ->where('business_id', auth()->user()->business_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'category', 'price', 'duration']);
 
         // Get clients in the business (for business admin)
+        // User does not use BelongsToBusiness trait — filter manually.
         $clients = User::query()
-            ->where('business_id', auth()->user()->business_id)
+            ->where('primary_business_id', auth()->user()->primary_business_id)
             ->where('role', 'client')
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'phone']);
@@ -191,7 +188,7 @@ class AppointmentController extends Controller
         try {
             $appointment = $this->appointmentService->createAppointment([
                 ...$request->validated(),
-                'business_id' => auth()->user()->business_id,
+                'business_id' => auth()->user()->primary_business_id,
                 'client_id' => $request->input('client_id') ?? auth()->id(),
             ]);
 
@@ -240,8 +237,47 @@ class AppointmentController extends Controller
             ->where('appointment_id', $appointment->id)
             ->first(['id', 'numero_ecf', 'status', 'created_at']);
 
+        $appointmentServiceLines = $appointment
+            ->appointmentServices()
+            ->with(['service', 'employee.user'])
+            ->get()
+            ->map(fn ($line) => [
+                'id' => $line->id,
+                'service' => [
+                    'id' => $line->service->id,
+                    'name' => $line->service->name,
+                    'price' => $line->service->price,
+                    'duration' => $line->service->duration,
+                    'category' => $line->service->category,
+                ],
+                'employee' => $line->employee ? [
+                    'id' => $line->employee->id,
+                    'name' => $line->employee->user?->name,
+                    'photo_url' => $line->employee->photo_url,
+                ] : null,
+                'has_employee' => $line->employee !== null,
+            ]);
+
+        $employeesWithServices = Employee::query()
+            ->where('is_active', true)
+            ->with(['user:id,name', 'services:id,name,price,duration'])
+            ->get()
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'name' => $e->user?->name,
+                'photo_url' => $e->photo_url,
+                'services' => $e->services->map(fn ($s) => [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'price' => $s->price,
+                    'duration' => $s->duration,
+                ])->values(),
+            ]);
+
         return Inertia::render('Appointments/Show', [
             'appointment' => $appointment,
+            'appointment_service_lines' => $appointmentServiceLines,
+            'employees_with_services' => $employeesWithServices,
             'can' => [
                 'edit' => $user->can('update', $appointment),
                 'cancel' => $user->can('delete', $appointment),
@@ -266,19 +302,39 @@ class AppointmentController extends Controller
         $appointment->load(['service', 'employee.user', 'client']);
 
         $employees = Employee::query()
-            ->with('user:id,name,email')
-            ->where('business_id', auth()->user()->business_id)
+            ->with(['user:id,name,email', 'services:id,name,price,duration,category'])
             ->where('is_active', true)
             ->get(['id', 'user_id', 'photo_url']);
 
         $services = Service::query()
-            ->where('business_id', auth()->user()->business_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'category', 'price', 'duration']);
 
+        $appointmentServiceLines = $appointment
+            ->appointmentServices()
+            ->with(['service', 'employee.user'])
+            ->get()
+            ->map(fn ($line) => [
+                'id' => $line->id,
+                'service' => [
+                    'id' => $line->service->id,
+                    'name' => $line->service->name,
+                    'price' => $line->service->price,
+                    'duration' => $line->service->duration,
+                    'category' => $line->service->category,
+                ],
+                'employee' => $line->employee ? [
+                    'id' => $line->employee->id,
+                    'name' => $line->employee->user?->name,
+                    'photo_url' => $line->employee->photo_url,
+                ] : null,
+                'has_employee' => $line->employee !== null,
+            ]);
+
         return Inertia::render('Appointments/Edit', [
             'appointment' => $appointment,
+            'appointment_service_lines' => $appointmentServiceLines,
             'employees' => $employees,
             'services' => $services,
             'statuses' => ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'],

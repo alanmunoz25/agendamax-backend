@@ -17,6 +17,7 @@ import { ConfirmationModal } from '@/components/confirmation-modal';
 import type { Employee } from '@/types/models';
 import type { PaginatedData } from '@/types/pagination';
 import { Plus, Users, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     employees: PaginatedData<Employee>;
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export default function EmployeesIndex({ employees, filters }: Props) {
+    const { t } = useTranslation();
     const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
 
     const handleSearch = (value: string) => {
@@ -63,7 +65,7 @@ export default function EmployeesIndex({ employees, filters }: Props) {
     const columns: Column<Employee>[] = [
         {
             key: 'name',
-            label: 'Employee',
+            label: t('employees.col_name'),
             sortable: true,
             render: (employee) => (
                 <div className="flex items-center gap-3">
@@ -91,7 +93,7 @@ export default function EmployeesIndex({ employees, filters }: Props) {
         },
         {
             key: 'services',
-            label: 'Services',
+            label: t('employees.col_services'),
             render: (employee) => (
                 <div className="flex flex-wrap gap-1">
                     {employee.services && employee.services.length > 0 ? (
@@ -102,7 +104,7 @@ export default function EmployeesIndex({ employees, filters }: Props) {
                         ))
                     ) : (
                         <span className="text-sm text-muted-foreground">
-                            No services assigned
+                            {t('employees.no_services')}
                         </span>
                     )}
                     {employee.services && employee.services.length > 3 && (
@@ -115,11 +117,11 @@ export default function EmployeesIndex({ employees, filters }: Props) {
         },
         {
             key: 'is_active',
-            label: 'Status',
+            label: t('employees.col_status'),
             sortable: true,
             render: (employee) => (
                 <Badge variant={employee.is_active ? 'success' : 'secondary'}>
-                    {employee.is_active ? 'Active' : 'Inactive'}
+                    {employee.is_active ? t('employees.status_active') : t('employees.status_inactive')}
                 </Badge>
             ),
         },
@@ -135,7 +137,7 @@ export default function EmployeesIndex({ employees, filters }: Props) {
                         setDeleteEmployee(employee);
                     }}
                 >
-                    Delete
+                    {t('common.delete')}
                 </Button>
             ),
         },
@@ -145,10 +147,10 @@ export default function EmployeesIndex({ employees, filters }: Props) {
 
     return (
         <AppLayout
-            title="Employees"
+            title={t('employees.title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Employees' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.employees') },
             ]}
         >
             <div className="space-y-6">
@@ -156,15 +158,15 @@ export default function EmployeesIndex({ employees, filters }: Props) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Employees
+                            {t('employees.title')}
                         </h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Manage your team members and their service assignments
+                            {t('employees.empty_description')}
                         </p>
                     </div>
                     <Button onClick={() => router.visit('/employees/create')}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Employee
+                        {t('employees.new')}
                     </Button>
                 </div>
 
@@ -172,7 +174,7 @@ export default function EmployeesIndex({ employees, filters }: Props) {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     <div className="flex-1">
                         <Input
-                            placeholder="Search employees..."
+                            placeholder={t('employees.search_placeholder')}
                             value={filters.search || ''}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="max-w-sm"
@@ -190,12 +192,12 @@ export default function EmployeesIndex({ employees, filters }: Props) {
                             }
                         >
                             <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="Status" />
+                                <SelectValue placeholder={t('employees.all_status')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="1">Active</SelectItem>
-                                <SelectItem value="0">Inactive</SelectItem>
+                                <SelectItem value="all">{t('employees.all_status')}</SelectItem>
+                                <SelectItem value="1">{t('employees.status_active')}</SelectItem>
+                                <SelectItem value="0">{t('employees.status_inactive')}</SelectItem>
                             </SelectContent>
                         </Select>
 
@@ -206,7 +208,7 @@ export default function EmployeesIndex({ employees, filters }: Props) {
                                 onClick={clearFilters}
                             >
                                 <X className="mr-2 h-4 w-4" />
-                                Clear
+                                {t('common.clear_filters')}
                             </Button>
                         )}
                     </div>
@@ -240,18 +242,18 @@ export default function EmployeesIndex({ employees, filters }: Props) {
                         icon={Users}
                         title={
                             hasActiveFilters
-                                ? 'No employees found'
-                                : 'No employees yet'
+                                ? t('employees.empty_title_filtered')
+                                : t('employees.empty_title')
                         }
                         description={
                             hasActiveFilters
-                                ? 'Try adjusting your search or filters'
-                                : 'Add your first employee to start managing your team'
+                                ? t('employees.empty_description_filtered')
+                                : t('employees.empty_description')
                         }
                         action={
                             !hasActiveFilters
                                 ? {
-                                      label: 'Add Employee',
+                                      label: t('employees.add_employee'),
                                       onClick: () =>
                                           router.visit('/employees/create'),
                                   }
@@ -265,24 +267,16 @@ export default function EmployeesIndex({ employees, filters }: Props) {
             <ConfirmationModal
                 open={!!deleteEmployee}
                 onOpenChange={(open) => !open && setDeleteEmployee(null)}
-                title="Delete Employee"
+                title={t('employees.delete_title')}
                 description={
                     <div className="space-y-2">
                         <p>
-                            Are you sure you want to delete{' '}
-                            <span className="font-semibold">
-                                {deleteEmployee?.user?.name}
-                            </span>
-                            ?
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                            This will remove their employee profile, but their
-                            user account will remain.
+                            {t('employees.delete_description', { name: deleteEmployee?.user?.name })}
                         </p>
                     </div>
                 }
-                confirmLabel="Delete"
-                cancelLabel="Cancel"
+                confirmLabel={t('employees.delete_confirm')}
+                cancelLabel={t('common.cancel')}
                 onConfirm={handleDelete}
                 variant="destructive"
             />

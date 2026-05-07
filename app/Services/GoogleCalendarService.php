@@ -22,9 +22,7 @@ use RuntimeException;
 
 class GoogleCalendarService implements CalendarProviderInterface
 {
-    public function __construct(private readonly GoogleClient $client)
-    {
-    }
+    public function __construct(private readonly GoogleClient $client) {}
 
     public function listBusySlots(Employee $employee, CarbonInterface $from, CarbonInterface $to): array
     {
@@ -33,11 +31,11 @@ class GoogleCalendarService implements CalendarProviderInterface
         try {
             $calendar = $this->calendar($googleAccount);
 
-            $request = new FreeBusyRequest();
+            $request = new FreeBusyRequest;
             $request->setTimeMin($from->toRfc3339String());
             $request->setTimeMax($to->toRfc3339String());
             $request->setItems([
-                (new FreeBusyRequestItem())->setId($this->calendarId($googleAccount)),
+                (new FreeBusyRequestItem)->setId($this->calendarId($googleAccount)),
             ]);
 
             $response = $calendar->freebusy->query($request);
@@ -212,7 +210,7 @@ class GoogleCalendarService implements CalendarProviderInterface
     {
         $timezone = config('app.timezone');
 
-        $event = new Event();
+        $event = new Event;
         $event->setSummary(optional($appointment->service)->name ?? 'Appointment');
         $event->setDescription($appointment->notes ?? '');
         $event->setStart($this->eventDateTime($appointment->scheduled_at, $timezone));
@@ -230,7 +228,7 @@ class GoogleCalendarService implements CalendarProviderInterface
 
     private function eventDateTime(CarbonInterface $dateTime, string $timezone): EventDateTime
     {
-        return (new EventDateTime())
+        return (new EventDateTime)
             ->setDateTime($dateTime->copy()->timezone($timezone)->toRfc3339String())
             ->setTimeZone($timezone);
     }

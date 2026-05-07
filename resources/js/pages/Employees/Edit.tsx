@@ -1,5 +1,5 @@
 import { FormEventHandler } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/input-error';
 import type { Employee, Service } from '@/types/models';
-import { UserPlus, Briefcase } from 'lucide-react';
+import { UserPlus, Briefcase, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     employee: Employee;
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export default function EditEmployee({ employee, services }: Props) {
+    const { t } = useTranslation();
+
     const { data, setData, put, processing, errors, isDirty } = useForm({
         photo_url: employee.photo_url || '',
         bio: employee.bio || '',
@@ -48,7 +51,7 @@ export default function EditEmployee({ employee, services }: Props) {
     // Group services by category
     const servicesByCategory = services.reduce(
         (acc, service) => {
-            const category = service.category || 'Uncategorized';
+            const category = service.category || t('common.uncategorized');
             if (!acc[category]) {
                 acc[category] = [];
             }
@@ -60,25 +63,25 @@ export default function EditEmployee({ employee, services }: Props) {
 
     return (
         <AppLayout
-            title="Edit Employee"
+            title={t('employees.edit_title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Employees', href: '/employees' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.employees'), href: '/employees' },
                 {
-                    label: employee.user?.name || 'Employee',
+                    label: employee.user?.name || t('employees.title'),
                     href: `/employees/${employee.id}`,
                 },
-                { label: 'Edit' },
+                { label: t('breadcrumbs.edit') },
             ]}
         >
             <div className="mx-auto max-w-2xl space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        Edit Employee
+                        {t('employees.edit_title')}
                     </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Update {employee.user?.name}'s employee profile
+                        {t('employees.edit_subtitle', { name: employee.user?.name })}
                     </p>
                 </div>
 
@@ -88,15 +91,15 @@ export default function EditEmployee({ employee, services }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <UserPlus className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Employee Information</CardTitle>
+                                <CardTitle>{t('employees.info_card_title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Update employee details
+                                {t('employees.info_card_edit_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>User Account</Label>
+                                <Label>{t('employees.user_account_label')}</Label>
                                 <div className="rounded-md border border-input bg-muted px-3 py-2">
                                     <div className="flex flex-col">
                                         <span className="font-medium">
@@ -108,12 +111,12 @@ export default function EditEmployee({ employee, services }: Props) {
                                     </div>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    User account cannot be changed
+                                    {t('employees.user_account_readonly')}
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="photo_url">Photo URL</Label>
+                                <Label htmlFor="photo_url">{t('employees.photo_label')}</Label>
                                 <Input
                                     id="photo_url"
                                     type="url"
@@ -125,23 +128,22 @@ export default function EditEmployee({ employee, services }: Props) {
                                 />
                                 <InputError message={errors.photo_url} />
                                 <p className="text-xs text-muted-foreground">
-                                    Optional URL to employee photo
+                                    {t('employees.photo_hint')}
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="bio">Bio</Label>
+                                <Label htmlFor="bio">{t('employees.bio_label')}</Label>
                                 <Textarea
                                     id="bio"
                                     value={data.bio}
                                     onChange={(e) => setData('bio', e.target.value)}
-                                    placeholder="Brief bio or description..."
+                                    placeholder={t('employees.bio_placeholder')}
                                     rows={3}
                                 />
                                 <InputError message={errors.bio} />
                                 <p className="text-xs text-muted-foreground">
-                                    Optional description of the employee's
-                                    expertise
+                                    {t('employees.bio_hint')}
                                 </p>
                             </div>
                         </CardContent>
@@ -152,10 +154,10 @@ export default function EditEmployee({ employee, services }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Briefcase className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Service Assignment</CardTitle>
+                                <CardTitle>{t('employees.service_assignment_title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Select which services this employee can provide
+                                {t('employees.service_assignment_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -197,8 +199,7 @@ export default function EditEmployee({ employee, services }: Props) {
                                 )
                             ) : (
                                 <p className="text-sm text-muted-foreground">
-                                    No active services available. Create services
-                                    first before assigning them to employees.
+                                    {t('employees.no_services_available')}
                                 </p>
                             )}
                             <InputError message={errors.service_ids} />
@@ -208,18 +209,17 @@ export default function EditEmployee({ employee, services }: Props) {
                     {/* Availability */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Availability</CardTitle>
+                            <CardTitle>{t('employees.availability_card_title')}</CardTitle>
                             <CardDescription>
-                                Control whether this employee is active
+                                {t('employees.availability_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                    <Label htmlFor="is_active">Active Status</Label>
+                                    <Label htmlFor="is_active">{t('employees.active_status_label')}</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        Only active employees can be scheduled for
-                                        appointments
+                                        {t('employees.active_status_hint')}
                                     </p>
                                 </div>
                                 <Switch
@@ -242,13 +242,38 @@ export default function EditEmployee({ employee, services }: Props) {
                             onClick={() => window.history.back()}
                             disabled={processing}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
-                            {processing ? 'Saving...' : 'Save Changes'}
+                            {processing ? t('common.saving') : t('common.save_changes')}
                         </Button>
                     </div>
                 </form>
+
+                {/* Work Schedule Card — Mejora #2 */}
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-muted-foreground" />
+                            <CardTitle>{t('employees.schedule.work_schedule_title')}</CardTitle>
+                        </div>
+                        <CardDescription>
+                            {t('employees.schedule.work_schedule_desc')}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-end">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                                router.visit(`/employees/${employee.id}/schedules/edit`)
+                            }
+                        >
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {t('employees.schedule.edit_btn')} →
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
     );

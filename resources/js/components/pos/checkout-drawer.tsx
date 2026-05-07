@@ -20,7 +20,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useForm } from '@inertiajs/react';
 import { AlertCircle, CheckCircle, Minus, Plus, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export interface CheckoutItem {
     id: number;
@@ -67,6 +67,14 @@ export function CheckoutDrawer({
     onSuccess,
 }: CheckoutDrawerProps) {
     const [items, setItems] = useState<CheckoutItem[]>(initialItems);
+
+    // Sync items when initialItems changes after mount (e.g. service added while drawer was closed).
+    // Using JSON.stringify prevents infinite loops from reference inequality on each parent render.
+    useEffect(() => {
+        setItems(initialItems);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [JSON.stringify(initialItems)]);
+
     const [discountAmount, setDiscountAmount] = useState('0.00');
     const [itbisPct, setItbisPct] = useState<ItbisPct>('18');
     const [tipMode, setTipMode] = useState<TipMode>('none');

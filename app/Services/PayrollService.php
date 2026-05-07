@@ -744,6 +744,209 @@ class PayrollService
     }
 
     /**
+     * Ensure an open PayrollPeriod exists for the given business covering today.
+     * If no open period includes today, creates a calendar-month period for the current month.
+     * Protected by a Cache::lock to avoid duplicate period creation under concurrent requests.
+     *
+     * This method is intentionally NOT protected by assertSameBusiness() — it is called from
+     * queue jobs and PosService where no authenticated User context is available.
+     *
+     * @throws PeriodOverlapException when an auto-created period would overlap an existing period
+     *                                (should not happen in practice because we check first)
+     */
+    public function ensureOpenPeriodForToday(Business $business): PayrollPeriod
+    {
+        $lockKey = "payroll:ensure-period:business:{$business->id}";
+        $lock = Cache::lock($lockKey, 5);
+
+        try {
+            $lock->block(3);
+
+            return DB::transaction(function () use ($business): PayrollPeriod {
+                $today = now()->toDateString();
+
+                // Find an open period that already covers today.
+                $existing = PayrollPeriod::withoutGlobalScopes()
+                    ->where('business_id', $business->id)
+                    ->where('status', 'open')
+                    ->where('starts_on', '<=', $today)
+                    ->where('ends_on', '>=', $today)
+                    ->first();
+
+                if ($existing !== null) {
+                    return $existing;
+                }
+
+                // Auto-create a calendar-month period for the current month.
+                $start = now()->startOfMonth();
+                $end = now()->endOfMonth();
+
+                // Safety check: reject if the auto period overlaps any existing period.
+                $overlap = PayrollPeriod::withoutGlobalScopes()
+                    ->where('business_id', $business->id)
+                    ->where('starts_on', '<=', $end->toDateString())
+                    ->where('ends_on', '>=', $start->toDateString())
+                    ->exists();
+
+                if ($overlap) {
+                    throw new PeriodOverlapException(
+                        "Cannot auto-create period: overlaps with an existing period for business {$business->id}"
+                    );
+                }
+
+                $period = PayrollPeriod::create([
+                    'business_id' => $business->id,
+                    'starts_on' => $start->toDateString(),
+                    'ends_on' => $end->toDateString(),
+                    'status' => 'open',
+                ]);
+
+                Log::info('PayrollService: auto-created open period for business', [
+                    'business_id' => $business->id,
+                    'period_id' => $period->id,
+                    'starts_on' => $period->starts_on->toDateString(),
+                    'ends_on' => $period->ends_on->toDateString(),
+                ]);
+
+                return $period;
+            });
+        } finally {
+            optional($lock)->release();
+        }
+    }
+
+    /**
+     * Assign commission records to the given period and create/update the aggregated PayrollRecord
+     * for the employee in that period. Safe to call multiple times (idempotent).
+     *
+     * This method operates without a User context — it is designed to be called from queue jobs
+     * and PosService where no authenticated admin is present. All business-level authorization
+     * is guaranteed by the caller (commission records are already scoped to the correct business).
+     *
+     * Concurrency: uses DB::transaction + lockForUpdate on the PayrollRecord row to prevent
+     * race conditions when two tickets for the same employee are processed simultaneously.
+     *
+     * @param  \Illuminate\Support\Collection<int, CommissionRecord>  $commissionRecords
+     */
+    public function upsertEmployeeRecord(
+        int $employeeId,
+        PayrollPeriod $period,
+        \Illuminate\Support\Collection $commissionRecords
+    ): PayrollRecord {
+        return DB::transaction(function () use ($employeeId, $period, $commissionRecords): PayrollRecord {
+            // Re-query from DB to get the canonical status/payroll_period_id values.
+            // In-memory models from firstOrCreate may have null for non-fillable fields
+            // (status, payroll_period_id) even when the DB has the correct values.
+            $candidateIds = $commissionRecords->pluck('id')->filter()->all();
+
+            if (! empty($candidateIds)) {
+                // Assign all unassigned commission records (pending + no period) to this period.
+                CommissionRecord::withoutGlobalScopes()
+                    ->whereIn('id', $candidateIds)
+                    ->whereNull('payroll_period_id')
+                    ->where('status', 'pending')
+                    ->update(['payroll_period_id' => $period->id]);
+            }
+
+            // Recalculate total commissions for this employee in this period
+            // (includes records assigned in previous runs + this batch).
+            $periodCommissionsTotal = CommissionRecord::withoutGlobalScopes()
+                ->where('business_id', $period->business_id)
+                ->where('employee_id', $employeeId)
+                ->where('payroll_period_id', $period->id)
+                ->where('status', 'pending')
+                ->sum('commission_amount');
+
+            $commissionsTotalStr = bcadd((string) $periodCommissionsTotal, '0', 2);
+
+            // Load employee for base_salary.
+            $employee = Employee::withoutGlobalScopes()->find($employeeId);
+            $baseSalary = bcadd((string) ($employee?->base_salary ?? '0'), '0', 2);
+
+            // Lock the PayrollRecord row to prevent concurrent upserts for the same employee+period.
+            $record = PayrollRecord::withoutGlobalScopes()
+                ->where('payroll_period_id', $period->id)
+                ->where('employee_id', $employeeId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($record === null) {
+                // First commission for this employee in this period — create the record.
+                $tipsTotal = Tip::withoutGlobalScopes()
+                    ->where('business_id', $period->business_id)
+                    ->where('employee_id', $employeeId)
+                    ->where('payroll_period_id', $period->id)
+                    ->sum('amount');
+
+                $adjustmentsTotal = PayrollAdjustment::withoutGlobalScopes()
+                    ->where('payroll_period_id', $period->id)
+                    ->where('employee_id', $employeeId)
+                    ->get()
+                    ->reduce(
+                        fn (string $carry, PayrollAdjustment $a) => bcadd($carry, $a->signedAmount(), 2),
+                        '0.00'
+                    );
+
+                $gross = $this->bcAdd($baseSalary, $commissionsTotalStr, (string) $tipsTotal, $adjustmentsTotal);
+
+                $record = new PayrollRecord;
+                $record->forceFill([
+                    'business_id' => $period->business_id,
+                    'payroll_period_id' => $period->id,
+                    'employee_id' => $employeeId,
+                    'base_salary_snapshot' => $baseSalary,
+                    'commissions_total' => $commissionsTotalStr,
+                    'tips_total' => bcadd((string) $tipsTotal, '0', 2),
+                    'adjustments_total' => $adjustmentsTotal,
+                    'gross_total' => $gross,
+                    'status' => 'draft',
+                    'snapshot_payload' => [
+                        'auto_generated' => true,
+                        'generated_at' => now()->toIso8601String(),
+                    ],
+                ]);
+                $record->save();
+
+                Log::info('PayrollService: auto-created PayrollRecord for employee', [
+                    'period_id' => $period->id,
+                    'employee_id' => $employeeId,
+                    'commissions_total' => $commissionsTotalStr,
+                    'gross_total' => $gross,
+                ]);
+            } elseif ($record->status === 'draft') {
+                // Record already exists in draft — recalculate commissions_total and gross_total.
+                // Tips and adjustments are not recalculated here (they are not affected by the new commission).
+                $newGross = $this->bcAdd(
+                    (string) $record->base_salary_snapshot,
+                    $commissionsTotalStr,
+                    (string) $record->tips_total,
+                    (string) $record->adjustments_total
+                );
+
+                $record->update([
+                    'commissions_total' => $commissionsTotalStr,
+                    'gross_total' => $newGross,
+                ]);
+
+                Log::info('PayrollService: updated existing draft PayrollRecord for employee', [
+                    'period_id' => $period->id,
+                    'employee_id' => $employeeId,
+                    'commissions_total' => $commissionsTotalStr,
+                    'gross_total' => $newGross,
+                ]);
+            } else {
+                Log::warning('PayrollService: PayrollRecord already in non-draft state, skipping upsert', [
+                    'period_id' => $period->id,
+                    'employee_id' => $employeeId,
+                    'record_status' => $record->status,
+                ]);
+            }
+
+            return $record->refresh();
+        });
+    }
+
+    /**
      * Defense in depth (DN-02): ensure the user belongs to the same business as the resource.
      * Super admins bypass this check and may operate across any business.
      *
@@ -760,9 +963,9 @@ class PayrollService
             return;
         }
 
-        if ($user->business_id !== $businessId) {
+        if ($user->primary_business_id !== $businessId) {
             throw new \Illuminate\Auth\Access\AuthorizationException(
-                "Cross-business operation rejected: user (business_id={$user->business_id}) cannot operate on resource (business_id={$businessId})."
+                "Cross-business operation rejected: user (business_id={$user->primary_business_id}) cannot operate on resource (business_id={$businessId})."
             );
         }
     }

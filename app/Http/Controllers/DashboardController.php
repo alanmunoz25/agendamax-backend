@@ -33,7 +33,7 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'stats' => [
                 'today_appointments' => Appointment::whereDate('scheduled_at', today())->count(),
-                'total_clients' => User::where('business_id', $user->business_id)->where('role', 'client')->count(),
+                'total_clients' => User::where('primary_business_id', $user->primary_business_id)->where('role', 'client')->count(),
                 'active_employees' => Employee::where('is_active', true)->count(),
                 'total_services' => Service::count(),
             ],

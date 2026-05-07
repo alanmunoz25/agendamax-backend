@@ -72,7 +72,7 @@ class CourseController extends Controller
     {
         $course = $this->courseService->create([
             ...$request->validated(),
-            'business_id' => auth()->user()->business_id,
+            'business_id' => auth()->user()->primary_business_id,
         ]);
 
         return redirect()->route('courses.show', $course)

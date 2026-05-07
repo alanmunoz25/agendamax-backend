@@ -21,20 +21,22 @@ import {
 } from '@/components/ui/select';
 import InputError from '@/components/input-error';
 import type { Business } from '@/types/models';
-import { type BreadcrumbItem } from '@/types';
 import { Save, X } from 'lucide-react';
 import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     business: Business;
 }
 
 export default function EditBusiness({ business }: Props) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Businesses', href: '/businesses' },
+    const { t } = useTranslation();
+
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('breadcrumbs.businesses'), href: '/businesses' },
         { title: business.name, href: `/businesses/${business.id}` },
-        { title: 'Edit', href: `/businesses/${business.id}/edit` },
+        { title: t('breadcrumbs.edit'), href: `/businesses/${business.id}/edit` },
     ];
 
     const { data, setData, put, processing, errors, isDirty } = useForm({
@@ -57,22 +59,22 @@ export default function EditBusiness({ business }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit ${business.name}`} />
+            <Head title={`${t('businesses.edit_title')} - ${business.name}`} />
             <div className="mx-auto max-w-2xl space-y-6 p-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Business</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">Update business details and settings</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('businesses.edit_title')}</h1>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('businesses.edit_subtitle')}</p>
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Business Information</CardTitle>
-                            <CardDescription>General details about the business</CardDescription>
+                            <CardTitle>{t('businesses.info_card_title')}</CardTitle>
+                            <CardDescription>{t('businesses.info_card_edit_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Business Name</Label>
+                                <Label htmlFor="name">{t('businesses.name_label')}</Label>
                                 <Input
                                     id="name"
                                     value={data.name}
@@ -83,7 +85,7 @@ export default function EditBusiness({ business }: Props) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="slug">URL Slug</Label>
+                                <Label htmlFor="slug">{t('businesses.slug_label')}</Label>
                                 <Input
                                     id="slug"
                                     value={data.slug}
@@ -94,7 +96,7 @@ export default function EditBusiness({ business }: Props) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description">{t('businesses.description_label')}</Label>
                                 <Textarea
                                     id="description"
                                     value={data.description}
@@ -106,7 +108,7 @@ export default function EditBusiness({ business }: Props) {
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">{t('businesses.email_label')}</Label>
                                     <Input
                                         id="email"
                                         type="email"
@@ -116,7 +118,7 @@ export default function EditBusiness({ business }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="phone">Phone</Label>
+                                    <Label htmlFor="phone">{t('businesses.phone_label')}</Label>
                                     <Input
                                         id="phone"
                                         value={data.phone}
@@ -127,7 +129,7 @@ export default function EditBusiness({ business }: Props) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="address">Address</Label>
+                                <Label htmlFor="address">{t('businesses.address_label')}</Label>
                                 <Input
                                     id="address"
                                     value={data.address}
@@ -140,27 +142,27 @@ export default function EditBusiness({ business }: Props) {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Settings</CardTitle>
-                            <CardDescription>Business status and configuration</CardDescription>
+                            <CardTitle>{t('businesses.settings_card_title')}</CardTitle>
+                            <CardDescription>{t('businesses.settings_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label>Status</Label>
+                                    <Label>{t('common.status')}</Label>
                                     <Select value={data.status} onValueChange={(v) => setData('status', v)}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="active">Active</SelectItem>
-                                            <SelectItem value="inactive">Inactive</SelectItem>
-                                            <SelectItem value="suspended">Suspended</SelectItem>
+                                            <SelectItem value="active">{t('businesses.status_active')}</SelectItem>
+                                            <SelectItem value="inactive">{t('businesses.status_inactive')}</SelectItem>
+                                            <SelectItem value="suspended">{t('businesses.status_suspended')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <InputError message={errors.status} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="timezone">Timezone</Label>
+                                    <Label htmlFor="timezone">{t('businesses.timezone_label')}</Label>
                                     <Input
                                         id="timezone"
                                         value={data.timezone}
@@ -174,13 +176,13 @@ export default function EditBusiness({ business }: Props) {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Loyalty Program</CardTitle>
-                            <CardDescription>Configure the loyalty stamp system</CardDescription>
+                            <CardTitle>{t('businesses.loyalty_card_title')}</CardTitle>
+                            <CardDescription>{t('businesses.loyalty_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="loyalty_stamps_required">Stamps Required</Label>
+                                    <Label htmlFor="loyalty_stamps_required">{t('businesses.loyalty_stamps_label')}</Label>
                                     <Input
                                         id="loyalty_stamps_required"
                                         type="number"
@@ -194,7 +196,7 @@ export default function EditBusiness({ business }: Props) {
                                     <InputError message={errors.loyalty_stamps_required} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="loyalty_reward_description">Reward Description</Label>
+                                    <Label htmlFor="loyalty_reward_description">{t('businesses.loyalty_reward_label')}</Label>
                                     <Input
                                         id="loyalty_reward_description"
                                         value={data.loyalty_reward_description}
@@ -214,11 +216,11 @@ export default function EditBusiness({ business }: Props) {
                             disabled={processing}
                         >
                             <X className="mr-2 h-4 w-4" />
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
                             <Save className="mr-2 h-4 w-4" />
-                            {processing ? 'Saving...' : 'Save Changes'}
+                            {processing ? t('common.saving') : t('common.save_changes')}
                         </Button>
                     </div>
                 </form>

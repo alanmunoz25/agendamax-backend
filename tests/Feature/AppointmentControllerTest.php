@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Employee;
+use App\Models\EmployeeSchedule;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +68,17 @@ class AppointmentControllerTest extends TestCase
 
         // Attach service to employee so they can provide it
         $this->employee->services()->attach($this->service->id);
+
+        // Provide a full-week schedule so appointment booking tests pass schedule validation
+        for ($day = 0; $day <= 6; $day++) {
+            EmployeeSchedule::factory()->create([
+                'employee_id' => $this->employee->id,
+                'day_of_week' => $day,
+                'start_time' => '09:00:00',
+                'end_time' => '18:00:00',
+                'is_available' => true,
+            ]);
+        }
 
         $this->appointment = Appointment::factory()->create([
             'business_id' => $this->business->id,
@@ -195,7 +207,7 @@ class AppointmentControllerTest extends TestCase
                 'client_id' => $this->client->id,
                 'service_id' => $this->service->id,
                 'employee_id' => $this->employee->id,
-                'scheduled_at' => now()->addDays(5)->toIso8601String(),
+                'scheduled_at' => now()->addDays(5)->setTime(10, 0)->toIso8601String(),
                 'notes' => 'Test appointment notes',
             ]);
 
@@ -446,7 +458,7 @@ class AppointmentControllerTest extends TestCase
                 'client_id' => $this->client->id,
                 'service_id' => $this->service->id,
                 'employee_id' => $this->employee->id,
-                'scheduled_at' => now()->addDay()->toIso8601String(),
+                'scheduled_at' => now()->addDays(2)->setTime(11, 0)->toIso8601String(),
             ]);
 
         $response->assertRedirect();

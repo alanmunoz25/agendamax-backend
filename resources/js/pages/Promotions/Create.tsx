@@ -14,8 +14,11 @@ import {
 } from '@/components/ui/card';
 import InputError from '@/components/input-error';
 import { ArrowLeft, Megaphone, Upload, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function CreatePromotion() {
+    const { t } = useTranslation();
+
     const { data, setData, post, processing, errors, isDirty } = useForm<{
         title: string;
         image: File | null;
@@ -61,22 +64,23 @@ export default function CreatePromotion() {
 
     return (
         <AppLayout
+            title={t('promotions.create_title')}
             breadcrumbs={[
-                { title: 'Dashboard', href: '/dashboard' },
-                { title: 'Promotions', href: '/promotions' },
-                { title: 'Create', href: '#' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.promotions'), href: '/promotions' },
+                { label: t('breadcrumbs.create') },
             ]}
         >
             <div className="mx-auto max-w-2xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Create Promotion</h1>
-                        <p className="mt-2 text-sm text-muted-foreground">Add a new flyer-style promotion</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('promotions.create_title')}</h1>
+                        <p className="mt-2 text-sm text-muted-foreground">{t('promotions.create_subtitle')}</p>
                     </div>
                     <Button variant="outline" onClick={() => router.visit('/promotions')}>
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
+                        {t('common.back')}
                     </Button>
                 </div>
 
@@ -86,20 +90,20 @@ export default function CreatePromotion() {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Megaphone className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Promotion Details</CardTitle>
+                                <CardTitle>{t('promotions.info_card_title')}</CardTitle>
                             </div>
-                            <CardDescription>Basic information about the promotion</CardDescription>
+                            <CardDescription>{t('promotions.info_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="title" required>
-                                    Title
+                                    {t('promotions.title_label')}
                                 </Label>
                                 <Input
                                     id="title"
                                     value={data.title}
                                     onChange={(e) => setData('title', e.target.value)}
-                                    placeholder="e.g., Summer Sale, Grand Opening Special"
+                                    placeholder={t('promotions.title_placeholder')}
                                     required
                                 />
                                 <InputError message={errors.title} />
@@ -116,12 +120,12 @@ export default function CreatePromotion() {
                                 />
                                 <InputError message={errors.url} />
                                 <p className="text-xs text-muted-foreground">
-                                    Optional link for the promotion (e.g., landing page, booking link)
+                                    {t('promotions.url_hint')}
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="expires_at">Expiration Date</Label>
+                                <Label htmlFor="expires_at">{t('promotions.expires_label_input')}</Label>
                                 <Input
                                     id="expires_at"
                                     type="date"
@@ -130,7 +134,7 @@ export default function CreatePromotion() {
                                 />
                                 <InputError message={errors.expires_at} />
                                 <p className="text-xs text-muted-foreground">
-                                    Leave empty for a promotion with no expiration
+                                    {t('promotions.expires_hint')}
                                 </p>
                             </div>
                         </CardContent>
@@ -139,8 +143,8 @@ export default function CreatePromotion() {
                     {/* Flyer Image */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Flyer Image</CardTitle>
-                            <CardDescription>Upload a JPG or PNG image (max 2MB)</CardDescription>
+                            <CardTitle>{t('promotions.image_card_title')}</CardTitle>
+                            <CardDescription>{t('promotions.image_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {imagePreview ? (
@@ -169,10 +173,10 @@ export default function CreatePromotion() {
                                 >
                                     <Upload className="mb-4 h-10 w-10 text-muted-foreground/50" />
                                     <p className="text-sm font-medium text-muted-foreground">
-                                        Click to upload or drag and drop
+                                        {t('promotions.image_upload_cta')}
                                     </p>
                                     <p className="mt-1 text-xs text-muted-foreground/75">
-                                        JPG, JPEG, or PNG (max 2MB)
+                                        {t('promotions.image_upload_formats')}
                                     </p>
                                 </div>
                             )}
@@ -190,15 +194,15 @@ export default function CreatePromotion() {
                     {/* Status */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Status</CardTitle>
-                            <CardDescription>Control promotion visibility</CardDescription>
+                            <CardTitle>{t('common.status')}</CardTitle>
+                            <CardDescription>{t('promotions.status_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                    <Label htmlFor="is_active">Published</Label>
+                                    <Label htmlFor="is_active">{t('promotions.published_label')}</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        Active promotions are visible to clients
+                                        {t('promotions.published_hint')}
                                     </p>
                                 </div>
                                 <Switch
@@ -220,10 +224,10 @@ export default function CreatePromotion() {
                             disabled={processing}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back
+                            {t('common.back')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
-                            {processing ? 'Creating...' : 'Create Promotion'}
+                            {processing ? t('common.creating') : t('promotions.create_title')}
                         </Button>
                     </div>
                 </form>

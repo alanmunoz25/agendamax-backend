@@ -4,18 +4,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { QrCode as QrCodeIcon } from 'lucide-react';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Business', href: '/business' },
-    { title: 'QR Codes', href: '/qr-codes' },
-    { title: 'Create', href: '/qr-codes/create' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function Create() {
+    const { t } = useTranslation();
+
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('nav.business'), href: '/business' },
+        { title: t('qr_codes.title'), href: '/qr-codes' },
+        { title: t('breadcrumbs.create'), href: '/qr-codes/create' },
+    ];
+
     const { data, setData, post, processing, errors } = useForm({
         reward_description: '',
         stamps_required: 1,
@@ -29,17 +31,17 @@ export default function Create() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create QR" />
+            <Head title={t('qr_codes.create_title')} />
 
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Create QR</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('qr_codes.create_title')}</h1>
                     <p className="text-muted-foreground">
-                        Generate a visit QR code with reward and stamp requirements.
+                        {t('qr_codes.create_subtitle')}
                     </p>
                 </div>
                 <Link href="/qr-codes">
-                    <Button variant="outline">Back to list</Button>
+                    <Button variant="outline">{t('qr_codes.back_to_list')}</Button>
                 </Link>
             </div>
 
@@ -47,19 +49,19 @@ export default function Create() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <QrCodeIcon className="size-5" />
-                        QR Details
+                        {t('qr_codes.qr_details_card_title')}
                     </CardTitle>
-                    <CardDescription>Define the reward and stamps needed.</CardDescription>
+                    <CardDescription>{t('qr_codes.qr_details_card_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form className="space-y-6" onSubmit={submit}>
                         <div className="space-y-2">
-                            <Label htmlFor="reward_description">Reward Description</Label>
+                            <Label htmlFor="reward_description">{t('qr_codes.reward_description_label')}</Label>
                             <Input
                                 id="reward_description"
                                 value={data.reward_description}
                                 onChange={(e) => setData('reward_description', e.target.value)}
-                                placeholder="e.g., Free coffee after 5 visits"
+                                placeholder={t('qr_codes.reward_placeholder')}
                             />
                             {errors.reward_description && (
                                 <p className="text-sm text-destructive">{errors.reward_description}</p>
@@ -67,7 +69,7 @@ export default function Create() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="stamps_required">Stamps Required</Label>
+                            <Label htmlFor="stamps_required">{t('qr_codes.stamps_required')}</Label>
                             <Input
                                 id="stamps_required"
                                 type="number"
@@ -82,9 +84,9 @@ export default function Create() {
 
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <div>
-                                <Label htmlFor="is_active">Active</Label>
+                                <Label htmlFor="is_active">{t('qr_codes.active_label')}</Label>
                                 <p className="text-sm text-muted-foreground">
-                                    Control if this QR can be scanned right now.
+                                    {t('qr_codes.active_hint')}
                                 </p>
                             </div>
                             <Switch
@@ -99,7 +101,7 @@ export default function Create() {
                         )}
 
                         <Button type="submit" disabled={processing}>
-                            Create QR
+                            {processing ? t('common.creating') : t('qr_codes.create_qr')}
                         </Button>
                     </form>
                 </CardContent>

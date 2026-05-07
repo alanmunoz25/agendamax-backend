@@ -8,18 +8,20 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { Business } from '@/types/models';
-import { type BreadcrumbItem } from '@/types';
 import { Building2, Pencil, Users, UserCog, Briefcase, Mail, Phone, MapPin } from 'lucide-react';
 import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     business: Business;
 }
 
 export default function BusinessShow({ business }: Props) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Businesses', href: '/businesses' },
+    const { t } = useTranslation();
+
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('breadcrumbs.businesses'), href: '/businesses' },
         { title: business.name, href: `/businesses/${business.id}` },
     ];
 
@@ -27,6 +29,15 @@ export default function BusinessShow({ business }: Props) {
         active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
         inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
         suspended: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    };
+
+    const getStatusLabel = (status: string) => {
+        const map: Record<string, string> = {
+            active: t('businesses.status_active'),
+            inactive: t('businesses.status_inactive'),
+            suspended: t('businesses.status_suspended'),
+        };
+        return map[status] ?? (status.charAt(0).toUpperCase() + status.slice(1));
     };
 
     return (
@@ -45,15 +56,15 @@ export default function BusinessShow({ business }: Props) {
                                 <span
                                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[business.status] || statusStyles.inactive}`}
                                 >
-                                    {business.status.charAt(0).toUpperCase() + business.status.slice(1)}
+                                    {getStatusLabel(business.status)}
                                 </span>
-                                <span className="text-sm text-muted-foreground">Code: {business.invitation_code}</span>
+                                <span className="text-sm text-muted-foreground">{t('businesses.code_label')} {business.invitation_code}</span>
                             </div>
                         </div>
                     </div>
                     <Button onClick={() => router.visit(`/businesses/${business.id}/edit`)}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit
+                        {t('common.edit')}
                     </Button>
                 </div>
 
@@ -61,7 +72,7 @@ export default function BusinessShow({ business }: Props) {
                 <div className="grid gap-4 md:grid-cols-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Users</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('businesses.stat_users')}</CardTitle>
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -70,7 +81,7 @@ export default function BusinessShow({ business }: Props) {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Employees</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('businesses.stat_employees')}</CardTitle>
                             <UserCog className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -79,7 +90,7 @@ export default function BusinessShow({ business }: Props) {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Services</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('businesses.stat_services')}</CardTitle>
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -91,7 +102,7 @@ export default function BusinessShow({ business }: Props) {
                 {/* Details */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Business Details</CardTitle>
+                        <CardTitle>{t('businesses.details_card_title')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {business.description && (
@@ -119,16 +130,16 @@ export default function BusinessShow({ business }: Props) {
                         </div>
                         <div className="grid gap-4 border-t pt-4 sm:grid-cols-3">
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Timezone</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('businesses.timezone_label')}</p>
                                 <p className="text-sm">{business.timezone}</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Loyalty Stamps Required</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('businesses.loyalty_stamps_label')}</p>
                                 <p className="text-sm">{business.loyalty_stamps_required}</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Loyalty Reward</p>
-                                <p className="text-sm">{business.loyalty_reward_description || 'Not set'}</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('businesses.loyalty_reward_label')}</p>
+                                <p className="text-sm">{business.loyalty_reward_description || t('businesses.loyalty_not_set')}</p>
                             </div>
                         </div>
                     </CardContent>

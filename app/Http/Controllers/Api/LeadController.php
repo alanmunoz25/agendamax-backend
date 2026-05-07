@@ -60,7 +60,7 @@ class LeadController extends Controller
 
                 // Find existing lead or create a new one
                 $lead = User::where('email', $request->validated('email'))
-                    ->where('business_id', $businessId)
+                    ->where('primary_business_id', $businessId)
                     ->first();
 
                 if ($lead) {

@@ -6,6 +6,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Business;
 use App\Models\Employee;
+use App\Models\EmployeeSchedule;
 use App\Models\Service;
 use App\Models\User;
 use Carbon\Carbon;
@@ -72,6 +73,19 @@ class MultiServiceAppointmentTest extends TestCase
 
         $this->employee1->services()->attach($this->service1->id);
         $this->employee2->services()->attach($this->service2->id);
+
+        // Provide a full-week schedule for both employees so booking tests pass schedule validation
+        foreach ([$this->employee1, $this->employee2] as $emp) {
+            for ($day = 0; $day <= 6; $day++) {
+                EmployeeSchedule::factory()->create([
+                    'employee_id' => $emp->id,
+                    'day_of_week' => $day,
+                    'start_time' => '09:00:00',
+                    'end_time' => '18:00:00',
+                    'is_available' => true,
+                ]);
+            }
+        }
     }
 
     public function test_can_create_appointment_with_services_array(): void

@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreServiceRequest;
 use App\Http\Requests\UpdateServiceRequest;
+use App\Models\CommissionRule;
+use App\Models\Employee;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -89,7 +91,7 @@ class ServiceController extends Controller
 
         $service = Service::create([
             ...$data,
-            'business_id' => auth()->user()->business_id,
+            'business_id' => auth()->user()->primary_business_id,
         ]);
 
         return redirect()->route('services.show', $service)
@@ -105,9 +107,68 @@ class ServiceController extends Controller
 
         $service->load(['business', 'serviceCategory.parent']);
 
+        $commissionRules = CommissionRule::query()
+            ->where('service_id', $service->id)
+            ->with('employee.user')
+            ->orderBy('is_active', 'desc')
+            ->get()
+            ->map(fn ($rule) => [
+                'id' => $rule->id,
+                'scope_type' => $this->deriveCommissionScopeType($rule),
+                'type' => $rule->type,
+                'value' => $rule->value,
+                'is_active' => $rule->is_active,
+                'employee' => $rule->employee ? [
+                    'id' => $rule->employee->id,
+                    'name' => $rule->employee->user?->name,
+                ] : null,
+                'effective_from' => $rule->effective_from?->format('Y-m-d'),
+                'effective_until' => $rule->effective_until?->format('Y-m-d'),
+            ]);
+
+        $globalRuleCount = CommissionRule::query()
+            ->where('business_id', $service->business_id)
+            ->whereNull('employee_id')
+            ->whereNull('service_id')
+            ->where('is_active', true)
+            ->count();
+
+        $allEmployees = Employee::query()
+            ->where('is_active', true)
+            ->with('user:id,name')
+            ->get()
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'name' => $e->user?->name,
+            ]);
+
         return Inertia::render('Services/Show', [
             'service' => $service,
+            'commission_rules' => $commissionRules,
+            'global_rule_count' => $globalRuleCount,
+            'all_employees' => $allEmployees,
         ]);
+    }
+
+    /**
+     * Derive the scope_type string from the commission rule's nullable FK columns.
+     * The DB does not store scope_type directly — it is represented by employee_id / service_id presence.
+     */
+    private function deriveCommissionScopeType(CommissionRule $rule): string
+    {
+        if ($rule->employee_id !== null && $rule->service_id !== null) {
+            return 'specific';
+        }
+
+        if ($rule->employee_id === null && $rule->service_id !== null) {
+            return 'per_service';
+        }
+
+        if ($rule->employee_id !== null && $rule->service_id === null) {
+            return 'per_employee';
+        }
+
+        return 'global';
     }
 
     /**

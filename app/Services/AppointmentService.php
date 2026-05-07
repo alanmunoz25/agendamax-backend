@@ -141,6 +141,23 @@ class AppointmentService
      */
     public function checkAvailability(int $employeeId, Carbon $startTime, Carbon $endTime): bool
     {
+        $employee = Employee::find($employeeId);
+
+        if (! $employee) {
+            return false;
+        }
+
+        // Validate against the employee's weekly schedule (always enforced, regardless of environment)
+        if (! $this->isWithinEmployeeSchedule($employee, $startTime, $endTime)) {
+            Log::info('Outside employee schedule', [
+                'employee_id' => $employeeId,
+                'start' => $startTime,
+                'end' => $endTime,
+            ]);
+
+            return false;
+        }
+
         // Check for conflicting appointments
         $hasConflict = Appointment::where('employee_id', $employeeId)
             ->whereIn('status', ['pending', 'confirmed'])
@@ -164,9 +181,7 @@ class AppointmentService
             return false;
         }
 
-        $employee = Employee::find($employeeId);
-
-        if (! $employee || app()->environment('local')) {
+        if (app()->environment('local')) {
             return true;
         }
 
@@ -203,6 +218,8 @@ class AppointmentService
 
     /**
      * Get available time slots for an employee on a given date.
+     * Slots are derived from the employee's EmployeeSchedule records for that day.
+     * If the employee has no schedule (or is marked unavailable), returns empty.
      *
      * @param  string  $date  Format: Y-m-d
      * @return Collection<int, string> Time strings in "HH:MM:SS" format
@@ -217,9 +234,19 @@ class AppointmentService
             return collect();
         }
 
-        // Business hours (TODO: Make this configurable per business)
-        $businessStart = Carbon::parse($date.' 09:00:00');
-        $businessEnd = Carbon::parse($date.' 18:00:00');
+        // Resolve the day-of-week for this date (0=Sunday … 6=Saturday, matching the migration comment)
+        $dayOfWeek = Carbon::parse($date)->dayOfWeek;
+
+        // Load active schedule windows for this employee on this day
+        $schedules = $employee->schedules()
+            ->where('day_of_week', $dayOfWeek)
+            ->where('is_available', true)
+            ->get();
+
+        // Employee does not work on this day — return empty
+        if ($schedules->isEmpty()) {
+            return collect();
+        }
 
         // Get existing appointments for this employee on this date
         $appointments = Appointment::where('employee_id', $employeeId)
@@ -228,45 +255,52 @@ class AppointmentService
             ->orderBy('scheduled_at')
             ->get(['scheduled_at', 'scheduled_until']);
 
-        $externalBusy = collect();
-
-        if (! app()->environment('local')) {
-            try {
-                $busySlots = $this->calendarProvider->listBusySlots($employee, $businessStart, $businessEnd);
-                $externalBusy = collect($busySlots);
-            } catch (RuntimeException $exception) {
-                Log::info('Skipping Google busy slots for availability', [
-                    'employee_id' => $employeeId,
-                    'reason' => $exception->getMessage(),
-                ]);
-            } catch (\Throwable $exception) {
-                Log::warning('Unable to fetch Google busy slots for availability', [
-                    'employee_id' => $employeeId,
-                    'error' => $exception->getMessage(),
-                ]);
-            }
-        }
-
-        $availableSlots = collect();
-        $currentTime = $businessStart->copy();
         $slotDuration = $service->duration;
+        $availableSlots = collect();
 
-        while ($currentTime->copy()->addMinutes($slotDuration)->lte($businessEnd)) {
-            $slotEnd = $currentTime->copy()->addMinutes($slotDuration);
+        // Iterate every schedule window (supports split shifts, e.g. 09-12 + 14-18)
+        foreach ($schedules as $schedule) {
+            $windowStart = Carbon::parse($date.' '.$schedule->start_time.':00');
+            $windowEnd = Carbon::parse($date.' '.$schedule->end_time.':00');
 
-            // Check if this slot conflicts with any appointment
-            $hasConflict = $appointments->contains(function ($appointment) use ($currentTime, $slotEnd) {
-                return $currentTime->lt($appointment->scheduled_until) && $slotEnd->gt($appointment->scheduled_at);
-            }) || $externalBusy->contains(function (array $busy) use ($currentTime, $slotEnd) {
-                return $currentTime->lt($busy['end']) && $slotEnd->gt($busy['start']);
-            });
+            $externalBusy = collect();
 
-            if (! $hasConflict) {
-                $availableSlots->push($currentTime->format('H:i:s'));
+            if (! app()->environment('local')) {
+                try {
+                    $busySlots = $this->calendarProvider->listBusySlots($employee, $windowStart, $windowEnd);
+                    $externalBusy = collect($busySlots);
+                } catch (RuntimeException $exception) {
+                    Log::info('Skipping Google busy slots for availability', [
+                        'employee_id' => $employeeId,
+                        'reason' => $exception->getMessage(),
+                    ]);
+                } catch (\Throwable $exception) {
+                    Log::warning('Unable to fetch Google busy slots for availability', [
+                        'employee_id' => $employeeId,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
             }
 
-            // Move to next slot (30-minute increments)
-            $currentTime->addMinutes(30);
+            $currentTime = $windowStart->copy();
+
+            while ($currentTime->copy()->addMinutes($slotDuration)->lte($windowEnd)) {
+                $slotEnd = $currentTime->copy()->addMinutes($slotDuration);
+
+                // Check if this slot conflicts with any appointment or external busy period
+                $hasConflict = $appointments->contains(function ($appointment) use ($currentTime, $slotEnd) {
+                    return $currentTime->lt($appointment->scheduled_until) && $slotEnd->gt($appointment->scheduled_at);
+                }) || $externalBusy->contains(function (array $busy) use ($currentTime, $slotEnd) {
+                    return $currentTime->lt($busy['end']) && $slotEnd->gt($busy['start']);
+                });
+
+                if (! $hasConflict) {
+                    $availableSlots->push($currentTime->format('H:i:s'));
+                }
+
+                // Move to next slot (30-minute increments)
+                $currentTime->addMinutes(30);
+            }
         }
 
         return $availableSlots;
@@ -331,6 +365,38 @@ class AppointmentService
         $this->syncUpdate($appointment);
 
         return $appointment;
+    }
+
+    /**
+     * Check whether a time window falls within at least one of the employee's
+     * active schedule records for that day.
+     *
+     * The service window must be fully contained within a single schedule window
+     * (no spanning across break periods or outside working hours).
+     */
+    private function isWithinEmployeeSchedule(Employee $employee, Carbon $startTime, Carbon $endTime): bool
+    {
+        $dayOfWeek = $startTime->dayOfWeek;
+
+        $schedules = $employee->schedules()
+            ->where('day_of_week', $dayOfWeek)
+            ->where('is_available', true)
+            ->get();
+
+        if ($schedules->isEmpty()) {
+            return false;
+        }
+
+        $startHis = $startTime->format('H:i:s');
+        $endHis = $endTime->format('H:i:s');
+
+        return $schedules->contains(function ($schedule) use ($startHis, $endHis) {
+            // Pad accessor values (HH:MM) to HH:MM:SS for consistent string comparison
+            $scheduleStart = strlen($schedule->start_time) === 5 ? $schedule->start_time.':00' : $schedule->start_time;
+            $scheduleEnd = strlen($schedule->end_time) === 5 ? $schedule->end_time.':00' : $schedule->end_time;
+
+            return $scheduleStart <= $startHis && $scheduleEnd >= $endHis;
+        });
     }
 
     private function syncCreate(Appointment $appointment): void

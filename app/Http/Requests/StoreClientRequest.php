@@ -26,7 +26,7 @@ class StoreClientRequest extends FormRequest
      */
     public function rules(): array
     {
-        $businessId = $this->user()->business_id;
+        $businessId = $this->user()->primary_business_id;
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -34,13 +34,13 @@ class StoreClientRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->where('business_id', $businessId),
+                Rule::unique('users', 'email')->where('primary_business_id', $businessId),
             ],
             'phone' => [
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('users', 'phone')->where('business_id', $businessId)->whereNotNull('phone'),
+                Rule::unique('users', 'phone')->where('primary_business_id', $businessId)->whereNotNull('phone'),
             ],
             'avatar_url' => ['nullable', 'url', 'max:500'],
             'birthday_day' => ['nullable', 'integer', 'min:1', 'max:31'],

@@ -12,9 +12,10 @@ import {
 import { DataTable, type Column } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import type { User, Business, PaginatedResponse } from '@/types/models';
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type SharedData } from '@/types';
 import { Users as UsersIcon, Pencil, Search, X, UserPlus } from 'lucide-react';
 import { Head, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 interface Filters {
     search?: string;
@@ -28,18 +29,6 @@ interface Props {
     filters: Filters;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Users', href: '/users' },
-];
-
-const roleLabels: Record<string, string> = {
-    super_admin: 'Super Admin',
-    business_admin: 'Business Admin',
-    employee: 'Employee',
-    client: 'Client',
-};
-
 const roleStyles: Record<string, string> = {
     super_admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
     business_admin: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -48,7 +37,20 @@ const roleStyles: Record<string, string> = {
 };
 
 export default function UsersIndex({ users, businesses, filters }: Props) {
+    const { t } = useTranslation();
     const { permissions } = usePage<SharedData>().props;
+
+    const roleLabels: Record<string, string> = {
+        super_admin: t('users.role_super_admin'),
+        business_admin: t('users.role_business_admin'),
+        employee: t('users.role_employee'),
+        client: t('users.role_client'),
+    };
+
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('breadcrumbs.users'), href: '/users' },
+    ];
 
     const handleSearch = (value: string) => {
         router.get('/users', { ...filters, search: value || undefined }, { preserveState: true, replace: true });
@@ -77,7 +79,7 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
     const columns: Column<User>[] = [
         {
             key: 'name',
-            label: 'User',
+            label: t('users.col_user'),
             render: (user) => (
                 <div>
                     <div className="font-medium text-foreground">{user.name}</div>
@@ -87,7 +89,7 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
         },
         {
             key: 'role',
-            label: 'Role',
+            label: t('users.col_role'),
             render: (user) => (
                 <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${roleStyles[user.role] || roleStyles.client}`}
@@ -98,14 +100,14 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
         },
         {
             key: 'business',
-            label: 'Business',
+            label: t('users.col_business'),
             render: (user) => (
-                <span className="text-sm text-muted-foreground">{user.business?.name || 'None'}</span>
+                <span className="text-sm text-muted-foreground">{user.business?.name || t('common.none')}</span>
             ),
         },
         {
             key: 'actions',
-            label: 'Actions',
+            label: t('common.actions'),
             render: (user) => (
                 <div className="flex items-center gap-2">
                     <Button
@@ -127,15 +129,15 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Users" />
+            <Head title={t('users.title')} />
             <div className="space-y-6 p-4">
                 {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Users</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('users.title')}</h1>
                     <p className="mt-2 text-sm text-muted-foreground">
                         {permissions.is_super_admin
-                            ? 'Manage all users across the platform'
-                            : 'Manage users in your business'}
+                            ? t('users.manage_platform')
+                            : t('users.manage_business')}
                     </p>
                 </div>
 
@@ -143,7 +145,7 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
                 <div className="flex justify-end">
                     <Button onClick={() => router.visit('/users/create')}>
                         <UserPlus className="mr-2 h-4 w-4" />
-                        Create User
+                        {t('users.create_user')}
                     </Button>
                 </div>
 
@@ -152,7 +154,7 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            placeholder="Search users..."
+                            placeholder={t('users.search_placeholder')}
                             value={filters.search || ''}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="pl-9"
@@ -161,24 +163,24 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
 
                     <Select value={filters.role || 'all'} onValueChange={handleRoleFilter}>
                         <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="All Roles" />
+                            <SelectValue placeholder={t('users.all_roles')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Roles</SelectItem>
-                            <SelectItem value="super_admin">Super Admin</SelectItem>
-                            <SelectItem value="business_admin">Business Admin</SelectItem>
-                            <SelectItem value="employee">Employee</SelectItem>
-                            <SelectItem value="client">Client</SelectItem>
+                            <SelectItem value="all">{t('users.all_roles')}</SelectItem>
+                            <SelectItem value="super_admin">{t('users.role_super_admin')}</SelectItem>
+                            <SelectItem value="business_admin">{t('users.role_business_admin')}</SelectItem>
+                            <SelectItem value="employee">{t('users.role_employee')}</SelectItem>
+                            <SelectItem value="client">{t('users.role_client')}</SelectItem>
                         </SelectContent>
                     </Select>
 
                     {permissions.is_super_admin && businesses.length > 0 && (
                         <Select value={filters.business_id || 'all'} onValueChange={handleBusinessFilter}>
                             <SelectTrigger className="w-full sm:w-[200px]">
-                                <SelectValue placeholder="All Businesses" />
+                                <SelectValue placeholder={t('users.all_businesses')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Businesses</SelectItem>
+                                <SelectItem value="all">{t('users.all_businesses')}</SelectItem>
                                 {businesses.map((b) => (
                                     <SelectItem key={b.id} value={String(b.id)}>
                                         {b.name}
@@ -191,7 +193,7 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
                     {hasActiveFilters && (
                         <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full sm:w-auto">
                             <X className="mr-2 h-4 w-4" />
-                            Clear
+                            {t('common.clear_filters')}
                         </Button>
                     )}
                 </div>
@@ -211,11 +213,11 @@ export default function UsersIndex({ users, businesses, filters }: Props) {
                 ) : (
                     <EmptyState
                         icon={UsersIcon}
-                        title="No users found"
+                        title={hasActiveFilters ? t('users.empty_title_filtered') : t('users.empty_title')}
                         description={
                             hasActiveFilters
-                                ? 'No users match your current filters. Try adjusting your search criteria.'
-                                : 'No users have been created yet.'
+                                ? t('users.empty_description_filtered')
+                                : t('users.empty_description')
                         }
                     />
                 )}

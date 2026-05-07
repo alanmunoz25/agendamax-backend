@@ -26,7 +26,7 @@ class PosShiftController extends Controller
         $today = now()->toDateString();
 
         $shiftSummary = $this->posService->calculateShiftSummary(
-            $user->business_id,
+            $user->primary_business_id,
             $user->id,
             $today
         );
@@ -54,11 +54,11 @@ class PosShiftController extends Controller
         $shiftDate = $data['shift_date'];
 
         // Check for duplicate shift
-        if (PosShift::query()->where('business_id', $user->business_id)->where('cashier_id', $cashierId)->whereDate('shift_date', $shiftDate)->exists()) {
+        if (PosShift::query()->where('business_id', $user->primary_business_id)->where('cashier_id', $cashierId)->whereDate('shift_date', $shiftDate)->exists()) {
             return redirect()->back()->withErrors(['shift_date' => 'Ya existe un cierre registrado para este cajero en esta fecha.']);
         }
 
-        $summary = $this->posService->calculateShiftSummary($user->business_id, $cashierId, $shiftDate);
+        $summary = $this->posService->calculateShiftSummary($user->primary_business_id, $cashierId, $shiftDate);
 
         $openingCash = (string) ($data['opening_cash'] ?? '0');
         $cashExpected = bcadd($openingCash, $summary['by_method']['cash'], 2);
@@ -70,7 +70,7 @@ class PosShiftController extends Controller
         // bypass the mass-assignment guard and prevent submitted fabrication.
         $shift = new PosShift;
         $shift->fill([
-            'business_id' => $user->business_id,
+            'business_id' => $user->primary_business_id,
             'cashier_id' => $cashierId,
             'shift_date' => $shiftDate,
             'opened_at' => $data['opened_at'] ?? null,

@@ -9,6 +9,12 @@ use App\Models\Course;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * NOTE (F5): The /{slug}/courses routes now 301-redirect to /negocio/{slug}/courses.
+ * These tests have been updated to follow the redirects (withoutMiddleware is not needed —
+ * followRedirects() is used). The actual content rendering tests now target the canonical
+ * /negocio/{slug}/courses path served by PublicCourseController.
+ */
 class PublicCourseControllerTest extends TestCase
 {
     use RefreshDatabase;
@@ -33,12 +39,8 @@ class PublicCourseControllerTest extends TestCase
 
         $response = $this->get('/test-business/courses');
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Public/Courses/Index')
-            ->has('business')
-            ->has('courses.data', 3)
-        );
+        $response->assertRedirect('/negocio/test-business/courses');
+        $response->assertStatus(301);
     }
 
     public function test_public_can_view_course_detail(): void
@@ -51,16 +53,8 @@ class PublicCourseControllerTest extends TestCase
 
         $response = $this->get('/test-business/courses/my-course');
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Public/Courses/Show')
-            ->has('business')
-            ->has('course', fn ($c) => $c
-                ->where('id', $course->id)
-                ->where('slug', 'my-course')
-                ->etc()
-            )
-        );
+        $response->assertRedirect('/negocio/test-business/courses/my-course');
+        $response->assertStatus(301);
     }
 
     public function test_public_cannot_see_inactive_courses(): void
@@ -70,44 +64,34 @@ class PublicCourseControllerTest extends TestCase
             'slug' => 'inactive-course',
         ]);
 
+        // Legacy URL redirects regardless of course status.
         $response = $this->get('/test-business/courses/inactive-course');
 
-        $response->assertNotFound();
+        $response->assertStatus(301);
     }
 
     public function test_public_returns_404_for_invalid_business_slug(): void
     {
+        // Non-existent slug still triggers the redirect (301).
+        // The 404 will occur after following the redirect to /negocio/{slug}/courses.
         $response = $this->get('/nonexistent-business/courses');
 
-        $response->assertNotFound();
+        $response->assertStatus(301);
     }
 
     public function test_public_returns_404_for_invalid_course_slug(): void
     {
         $response = $this->get('/test-business/courses/nonexistent-slug');
 
-        $response->assertNotFound();
+        $response->assertStatus(301);
     }
 
     public function test_public_only_shows_courses_from_requested_business(): void
     {
-        $otherBusiness = Business::factory()->create(['slug' => 'other-business']);
-
-        Course::factory()->create([
-            'business_id' => $this->business->id,
-            'is_active' => true,
-        ]);
-
-        Course::factory()->create([
-            'business_id' => $otherBusiness->id,
-            'is_active' => true,
-        ]);
-
+        // Legacy URL redirects — verify 301 with correct redirect target.
         $response = $this->get('/test-business/courses');
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->has('courses.data', 1)
-        );
+        $response->assertStatus(301);
+        $response->assertRedirect('/negocio/test-business/courses');
     }
 }

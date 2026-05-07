@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type Business, type QrCode } from '@/types';
+import { type Business, type QrCode } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import {
     Building2,
@@ -20,42 +20,39 @@ import {
     QrCode as QrCodeIcon,
     Trophy,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessShowProps {
     business: Business;
     qrCodes?: QrCode[];
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-    },
-    {
-        title: 'Business',
-        href: '/business',
-    },
-];
-
 export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
+    const { t } = useTranslation();
+
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('nav.business'), href: '/business' },
+    ];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Business Profile" />
+            <Head title={t('business_profile.title')} />
 
             <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">
-                            Business Profile
+                            {t('business_profile.title')}
                         </h1>
                         <p className="text-muted-foreground">
-                            Manage your business information and settings
+                            {t('business_profile.subtitle')}
                         </p>
                     </div>
                     <Link href="/business/edit">
                         <Button>
                             <Edit className="mr-2 size-4" />
-                            Edit Profile
+                            {t('business_profile.edit_btn')}
                         </Button>
                     </Link>
                 </div>
@@ -65,16 +62,16 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Building2 className="size-5" />
-                                Business Information
+                                {t('business_profile.info_card_title')}
                             </CardTitle>
                             <CardDescription>
-                                General business details
+                                {t('business_profile.info_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
                                 <label className="text-sm font-medium text-muted-foreground">
-                                    Business Name
+                                    {t('business_profile.name_label')}
                                 </label>
                                 <p className="text-base">{business.name}</p>
                             </div>
@@ -82,7 +79,7 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                             {business.description && (
                                 <div>
                                     <label className="text-sm font-medium text-muted-foreground">
-                                        Description
+                                        {t('business_profile.description_label')}
                                     </label>
                                     <p className="text-base">
                                         {business.description}
@@ -92,7 +89,7 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
 
                             <div>
                                 <label className="text-sm font-medium text-muted-foreground">
-                                    Invitation Code
+                                    {t('business_profile.invitation_code_label')}
                                 </label>
                                 <p className="font-mono text-base">
                                     {business.invitation_code}
@@ -103,9 +100,9 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Contact Information</CardTitle>
+                            <CardTitle>{t('business_profile.contact_card_title')}</CardTitle>
                             <CardDescription>
-                                How clients can reach you
+                                {t('business_profile.contact_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -114,7 +111,7 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                                     <Mail className="size-5 text-muted-foreground" />
                                     <div>
                                         <label className="text-sm font-medium text-muted-foreground">
-                                            Email
+                                            {t('business_profile.email_label')}
                                         </label>
                                         <p className="text-base">
                                             {business.email}
@@ -128,7 +125,7 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                                     <Phone className="size-5 text-muted-foreground" />
                                     <div>
                                         <label className="text-sm font-medium text-muted-foreground">
-                                            Phone
+                                            {t('business_profile.phone_label')}
                                         </label>
                                         <p className="text-base">
                                             {business.phone}
@@ -142,7 +139,7 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                                     <MapPin className="size-5 text-muted-foreground" />
                                     <div>
                                         <label className="text-sm font-medium text-muted-foreground">
-                                            Address
+                                            {t('business_profile.address_label')}
                                         </label>
                                         <p className="text-base">
                                             {business.address}
@@ -157,17 +154,17 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Trophy className="size-5" />
-                                Loyalty Program
+                                {t('business_profile.loyalty_card_title')}
                             </CardTitle>
                             <CardDescription>
-                                Reward your loyal customers
+                                {t('business_profile.loyalty_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div>
                                     <label className="text-sm font-medium text-muted-foreground">
-                                        Stamps Required for Reward
+                                        {t('business_profile.loyalty_stamps_label')}
                                     </label>
                                     <p className="text-2xl font-bold">
                                         {business.loyalty_stamps_required}
@@ -176,11 +173,11 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
 
                                 <div>
                                     <label className="text-sm font-medium text-muted-foreground">
-                                        Reward Description
+                                        {t('business_profile.loyalty_reward_label')}
                                     </label>
                                     <p className="text-base">
                                         {business.loyalty_reward_description ||
-                                            'No reward description set'}
+                                            t('business_profile.loyalty_not_set')}
                                     </p>
                                 </div>
                             </div>
@@ -192,23 +189,23 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                             <div>
                                 <CardTitle className="flex items-center gap-2">
                                     <QrCodeIcon className="size-5" />
-                                    QR Codes
+                                    {t('business_profile.qr_card_title')}
                                 </CardTitle>
                                 <CardDescription>
-                                    Visit QR codes for rewards and stamp tracking
+                                    {t('business_profile.qr_card_desc')}
                                 </CardDescription>
                             </div>
                             <Link href="/qr-codes/create">
                                 <Button>
                                     <QrCodeIcon className="mr-2 size-4" />
-                                    Create QR
+                                    {t('qr_codes.create_qr')}
                                 </Button>
                             </Link>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {qrCodes.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">
-                                    No QR codes yet. Create one to share with clients.
+                                    {t('business_profile.no_qr_codes')}
                                 </p>
                             ) : (
                                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -219,10 +216,10 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                                         >
                                             <div className="flex items-center justify-between">
                                                 <Badge variant={qr.is_active ? 'default' : 'secondary'}>
-                                                    {qr.is_active ? 'Active' : 'Inactive'}
+                                                    {qr.is_active ? t('common.active') : t('common.inactive')}
                                                 </Badge>
                                                 <span className="text-xs text-muted-foreground">
-                                                    Visit QR
+                                                    {t('qr_codes.visit_qr')}
                                                 </span>
                                             </div>
 
@@ -231,7 +228,7 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                                             <div className="space-y-2">
                                                 <div>
                                                     <p className="text-sm font-medium text-muted-foreground">
-                                                        Reward
+                                                        {t('qr_codes.reward_label')}
                                                     </p>
                                                     <p className="text-sm leading-snug">
                                                         {qr.reward_description}
@@ -239,7 +236,7 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium text-muted-foreground">
-                                                        Stamps Required
+                                                        {t('qr_codes.stamps_required')}
                                                     </p>
                                                     <p className="text-lg font-semibold">
                                                         {qr.stamps_required}
@@ -252,14 +249,14 @@ export default function Show({ business, qrCodes = [] }: BusinessShowProps) {
                                                     href={`/qr-codes/${qr.id}`}
                                                     className="text-sm font-medium text-primary hover:underline"
                                                 >
-                                                    Details
+                                                    {t('qr_codes.details')}
                                                 </Link>
                                                 {qr.image_url && (
                                                     <Link
                                                         href={qr.image_url}
                                                         className="text-sm text-muted-foreground hover:underline"
                                                     >
-                                                        View QR
+                                                        {t('qr_codes.view_qr')}
                                                     </Link>
                                                 )}
                                             </div>

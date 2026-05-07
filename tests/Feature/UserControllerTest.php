@@ -200,7 +200,7 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'newuser@example.com',
             'role' => 'client',
-            'business_id' => $this->business->id,
+            'primary_business_id' => $this->business->id,
         ]);
     }
 

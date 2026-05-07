@@ -10,7 +10,13 @@ class StoreCommissionRuleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return $user->isSuperAdmin() || $user->isBusinessAdmin();
     }
 
     /**

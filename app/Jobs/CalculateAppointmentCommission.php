@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\Appointment;
+use App\Models\Business;
 use App\Services\CommissionService;
+use App\Services\PayrollService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -66,9 +68,14 @@ class CalculateAppointmentCommission implements ShouldBeUnique, ShouldQueue
 
     /**
      * Execute the job.
-     * CommissionService is resolved by the container at runtime — not injected in constructor.
+     * CommissionService and PayrollService are resolved by the container at runtime.
+     *
+     * When the appointment is paid (ticket_id is set), the PosService::createTicket() already
+     * called generateForAppointment() synchronously. CommissionService::generateForAppointment()
+     * is idempotent (firstOrCreate) so calling it again is safe. After generating/confirming
+     * commission records, the payroll auto-assign runs to ensure the PayrollRecord is up to date.
      */
-    public function handle(CommissionService $service): void
+    public function handle(CommissionService $commissionService, PayrollService $payrollService): void
     {
         // Sin Auth en queue: bypass global scope para recuperar el appointment
         $appointment = Appointment::withoutGlobalScopes()->find($this->appointmentId);
@@ -82,6 +89,38 @@ class CalculateAppointmentCommission implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $service->generateForAppointment($appointment);
+        $commissionRecords = $commissionService->generateForAppointment($appointment);
+
+        // If the appointment is paid (has a linked POS ticket), auto-assign commissions to
+        // the open payroll period and upsert the employee's PayrollRecord immediately.
+        // If not paid yet, commissions remain pending (payroll_period_id stays null) until
+        // the ticket is created via PosService, which will trigger the upsert at that point.
+        if ($appointment->ticket_id !== null && $commissionRecords->isNotEmpty()) {
+            $business = Business::withoutGlobalScopes()->find($appointment->business_id);
+
+            if ($business === null) {
+                Log::warning('CalculateAppointmentCommission: business not found for payroll upsert', [
+                    'appointment_id' => $this->appointmentId,
+                    'business_id' => $appointment->business_id,
+                ]);
+
+                return;
+            }
+
+            try {
+                $period = $payrollService->ensureOpenPeriodForToday($business);
+
+                $commissionRecords->groupBy('employee_id')->each(
+                    function (\Illuminate\Support\Collection $records, int $employeeId) use ($payrollService, $period): void {
+                        $payrollService->upsertEmployeeRecord($employeeId, $period, $records);
+                    }
+                );
+            } catch (\Throwable $e) {
+                Log::error('CalculateAppointmentCommission: failed to auto-assign payroll', [
+                    'appointment_id' => $this->appointmentId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 }

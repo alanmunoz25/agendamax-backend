@@ -7,6 +7,7 @@ namespace Tests\Feature\Api;
 use App\Models\Appointment;
 use App\Models\Business;
 use App\Models\Employee;
+use App\Models\EmployeeSchedule;
 use App\Models\Service;
 use App\Models\User;
 use Carbon\Carbon;
@@ -54,6 +55,17 @@ class AppointmentControllerTest extends TestCase
         ]);
 
         $this->employee->services()->attach($this->service->id);
+
+        // Provide a full-week schedule so appointment booking tests pass schedule validation
+        for ($day = 0; $day <= 6; $day++) {
+            EmployeeSchedule::factory()->create([
+                'employee_id' => $this->employee->id,
+                'day_of_week' => $day,
+                'start_time' => '09:00:00',
+                'end_time' => '18:00:00',
+                'is_available' => true,
+            ]);
+        }
     }
 
     public function test_client_can_list_their_appointments(): void

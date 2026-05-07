@@ -26,6 +26,8 @@ import {
     X,
     ExternalLink,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
 
 interface Filters {
     search?: string;
@@ -37,34 +39,35 @@ interface Props {
     filters: Filters;
 }
 
-function getStatusBadge(promotion: Promotion) {
-    const isExpired = promotion.expires_at && new Date(promotion.expires_at) < new Date(new Date().toDateString());
-
-    if (isExpired) {
-        return (
-            <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                Expired
-            </span>
-        );
-    }
-
-    if (!promotion.is_active) {
-        return (
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-400">
-                Inactive
-            </span>
-        );
-    }
-
-    return (
-        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-            Active
-        </span>
-    );
-}
-
 export default function PromotionsIndex({ promotions, filters }: Props) {
+    const { t } = useTranslation();
     const [deletePromotion, setDeletePromotion] = useState<Promotion | null>(null);
+
+    const getStatusBadge = (promotion: Promotion) => {
+        const isExpired = promotion.expires_at && new Date(promotion.expires_at) < new Date(new Date().toDateString());
+
+        if (isExpired) {
+            return (
+                <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                    {t('promotions.status_expired')}
+                </span>
+            );
+        }
+
+        if (!promotion.is_active) {
+            return (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-400">
+                    {t('promotions.status_inactive')}
+                </span>
+            );
+        }
+
+        return (
+            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                {t('promotions.status_active')}
+            </span>
+        );
+    };
 
     const handleSearch = (value: string) => {
         router.get(
@@ -99,24 +102,24 @@ export default function PromotionsIndex({ promotions, filters }: Props) {
 
     return (
         <AppLayout
-            title="Promotions"
+            title={t('promotions.title')}
             breadcrumbs={[
-                { title: 'Dashboard', href: '/dashboard' },
-                { title: 'Promotions', href: '/promotions' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.promotions'), href: '/promotions' },
             ]}
         >
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Promotions</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('promotions.title')}</h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Manage your flyer-style promotions and banners
+                            {t('promotions.subtitle')}
                         </p>
                     </div>
                     <Button onClick={() => router.visit('/promotions/create')}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Promotion
+                        {t('promotions.add_promotion')}
                     </Button>
                 </div>
 
@@ -125,7 +128,7 @@ export default function PromotionsIndex({ promotions, filters }: Props) {
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            placeholder="Search promotions..."
+                            placeholder={t('promotions.search_placeholder')}
                             value={filters.search || ''}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="pl-9"
@@ -134,19 +137,19 @@ export default function PromotionsIndex({ promotions, filters }: Props) {
 
                     <Select value={filters.is_active || 'all'} onValueChange={handleStatusFilter}>
                         <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="All Status" />
+                            <SelectValue placeholder={t('promotions.all_status')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="1">Active</SelectItem>
-                            <SelectItem value="0">Inactive</SelectItem>
+                            <SelectItem value="all">{t('promotions.all_status')}</SelectItem>
+                            <SelectItem value="1">{t('common.active')}</SelectItem>
+                            <SelectItem value="0">{t('common.inactive')}</SelectItem>
                         </SelectContent>
                     </Select>
 
                     {hasActiveFilters && (
                         <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full sm:w-auto">
                             <X className="mr-2 h-4 w-4" />
-                            Clear
+                            {t('common.clear_filters')}
                         </Button>
                     )}
                 </div>
@@ -182,7 +185,9 @@ export default function PromotionsIndex({ promotions, filters }: Props) {
                                                     {getStatusBadge(promotion)}
                                                     {promotion.expires_at && (
                                                         <span className="text-xs text-muted-foreground">
-                                                            Expires {new Date(promotion.expires_at).toLocaleDateString()}
+                                                            {t('promotions.expires_label', {
+                                                                date: format(new Date(promotion.expires_at), 'dd/MM/yyyy'),
+                                                            })}
                                                         </span>
                                                     )}
                                                 </div>
@@ -225,7 +230,11 @@ export default function PromotionsIndex({ promotions, filters }: Props) {
                         {promotions.last_page > 1 && (
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">
-                                    Showing {promotions.from} to {promotions.to} of {promotions.total} promotions
+                                    {t('promotions.showing_range', {
+                                        from: promotions.from,
+                                        to: promotions.to,
+                                        total: promotions.total,
+                                    })}
                                 </p>
                                 <div className="flex gap-2">
                                     {Array.from({ length: promotions.last_page }, (_, i) => i + 1).map((page) => (
@@ -251,16 +260,16 @@ export default function PromotionsIndex({ promotions, filters }: Props) {
                 ) : (
                     <EmptyState
                         icon={Megaphone}
-                        title="No promotions found"
+                        title={hasActiveFilters ? t('promotions.empty_title_filtered') : t('promotions.empty_title')}
                         description={
                             hasActiveFilters
-                                ? 'No promotions match your current filters. Try adjusting your search criteria.'
-                                : "You haven't created any promotions yet. Get started by adding your first promotion."
+                                ? t('promotions.empty_description_filtered')
+                                : t('promotions.empty_description')
                         }
                         action={
                             !hasActiveFilters
                                 ? {
-                                      label: 'Add Promotion',
+                                      label: t('promotions.add_promotion'),
                                       onClick: () => router.visit('/promotions/create'),
                                   }
                                 : undefined
@@ -275,9 +284,9 @@ export default function PromotionsIndex({ promotions, filters }: Props) {
                     open={true}
                     onOpenChange={(open) => { if (!open) setDeletePromotion(null); }}
                     onConfirm={handleDelete}
-                    title="Delete Promotion"
-                    description={`Are you sure you want to delete "${deletePromotion.title}"? This action cannot be undone.`}
-                    confirmLabel="Delete"
+                    title={t('promotions.delete_title')}
+                    description={t('promotions.delete_description', { name: deletePromotion.title })}
+                    confirmLabel={t('common.delete')}
                     variant="destructive"
                 />
             )}

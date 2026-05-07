@@ -27,6 +27,7 @@ use App\Models\PosShift;
 use App\Models\PosTicket;
 use App\Observers\AppointmentObserver;
 use App\Observers\EmployeeObserver;
+use App\Policies\ClientEnrollmentPolicy;
 use App\Policies\ElectronicInvoice\BusinessFeConfigPolicy;
 use App\Policies\ElectronicInvoice\EcfPolicy;
 use App\Policies\ElectronicInvoice\EcfReceivedPolicy;
@@ -76,6 +77,11 @@ class AppServiceProvider extends ServiceProvider
         // POS policies (sub-namespace not auto-discovered by Laravel)
         Gate::policy(PosTicket::class, PosTicketPolicy::class);
         Gate::policy(PosShift::class, PosShiftPolicy::class);
+
+        // Client enrollment gates (block/unblock — not tied to a single model)
+        $clientEnrollmentPolicy = new ClientEnrollmentPolicy;
+        Gate::define('block-client', fn ($actor, $target, $business) => $clientEnrollmentPolicy->block($actor, $target, $business));
+        Gate::define('unblock-client', fn ($actor, $target, $business) => $clientEnrollmentPolicy->unblock($actor, $target, $business));
 
         // FCM push notification listeners for payroll events
         Event::listen(PayrollRecordApproved::class, SendPayrollRecordApprovedPush::class);

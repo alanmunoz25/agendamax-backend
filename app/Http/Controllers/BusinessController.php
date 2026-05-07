@@ -118,7 +118,23 @@ class BusinessController extends Controller
     {
         $this->authorize('update', $business);
 
-        $business->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('logo')) {
+            $data['logo_url'] = $request->file('logo')->store('businesses/logos', 'public');
+        }
+
+        if ($request->hasFile('banner')) {
+            $data['banner_url'] = $request->file('banner')->store('businesses/banners', 'public');
+        }
+
+        if ($request->hasFile('cover')) {
+            $data['cover_image_url'] = $request->file('cover')->store('businesses/covers', 'public');
+        }
+
+        unset($data['logo'], $data['banner'], $data['cover']);
+
+        $business->update($data);
 
         return redirect()->route('businesses.show', $business)
             ->with('success', 'Business updated successfully.');
@@ -184,7 +200,23 @@ class BusinessController extends Controller
 
         $this->authorize('update', $business);
 
-        $business->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('logo')) {
+            $data['logo_url'] = $request->file('logo')->store('businesses/logos', 'public');
+        }
+
+        if ($request->hasFile('banner')) {
+            $data['banner_url'] = $request->file('banner')->store('businesses/banners', 'public');
+        }
+
+        if ($request->hasFile('cover')) {
+            $data['cover_image_url'] = $request->file('cover')->store('businesses/covers', 'public');
+        }
+
+        unset($data['logo'], $data['banner'], $data['cover']);
+
+        $business->update($data);
 
         return redirect()->route('business.show')
             ->with('success', 'Business profile updated successfully.');

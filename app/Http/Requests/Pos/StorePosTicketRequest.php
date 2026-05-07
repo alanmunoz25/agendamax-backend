@@ -33,7 +33,7 @@ class StorePosTicketRequest extends FormRequest
             return $this->input('business_id') ? (int) $this->input('business_id') : null;
         }
 
-        return $user?->business_id;
+        return $user?->primary_business_id;
     }
 
     /**
@@ -62,9 +62,10 @@ class StorePosTicketRequest extends FormRequest
             'client_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('users', 'id')->where(function ($query) use ($businessId): void {
+                Rule::exists('user_business', 'user_id')->where(function ($query) use ($businessId): void {
                     if ($businessId) {
-                        $query->where('business_id', $businessId);
+                        $query->where('business_id', $businessId)
+                            ->whereIn('status', ['active', 'blocked']);
                     }
                 }),
             ],

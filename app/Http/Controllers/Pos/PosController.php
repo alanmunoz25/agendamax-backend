@@ -39,10 +39,21 @@ class PosController extends Controller
         abort_unless($business !== null, 404, 'Business not found.');
 
         $today = now()->toDateString();
+        $yesterday = now()->subDay()->toDateString();
 
+        // Show today's appointments AND recently-billed appointments from the last 2 days
+        // so that an appointment scheduled yesterday but billed today remains visible.
         $todayAppointments = Appointment::withoutGlobalScopes()
             ->where('business_id', $businessId)
-            ->whereDate('scheduled_at', $today)
+            ->where(function ($q) use ($today, $yesterday): void {
+                $q->whereDate('scheduled_at', $today)
+                    ->orWhere(function ($q2) use ($today, $yesterday): void {
+                        // Recently billed (has a ticket) from yesterday or today
+                        $q2->whereNotNull('ticket_id')
+                            ->whereDate('scheduled_at', '>=', $yesterday)
+                            ->whereDate('scheduled_at', '<', $today);
+                    });
+            })
             ->with(['client', 'employee.user', 'services', 'ticket'])
             ->orderBy('scheduled_at')
             ->get();
@@ -86,7 +97,7 @@ class PosController extends Controller
             'services_catalog' => Inertia::defer(fn () => Service::withoutGlobalScopes()
                 ->where('business_id', $businessId)
                 ->where('is_active', true)
-                ->with('category')
+                ->with('serviceCategory')
                 ->orderBy('name')
                 ->get()),
             'products_catalog' => Inertia::defer(fn () => Product::withoutGlobalScopes()

@@ -15,7 +15,6 @@ class ServiceImportService
     /**
      * Import services from parsed JSON data for a given business.
      *
-     * @param  int  $businessId
      * @param  array<string, mixed>  $data
      * @return array{categories_created: int, categories_updated: int, services_created: int, services_updated: int}
      *

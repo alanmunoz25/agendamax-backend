@@ -19,9 +19,10 @@ import {
 } from '@/components/ui/select';
 import InputError from '@/components/input-error';
 import type { User, Business } from '@/types/models';
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type SharedData } from '@/types';
 import { Save, X } from 'lucide-react';
 import { Head, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     targetUser: User;
@@ -29,21 +30,22 @@ interface Props {
     availableRoles: string[];
 }
 
-const roleLabels: Record<string, string> = {
-    super_admin: 'Super Admin',
-    business_admin: 'Business Admin',
-    employee: 'Employee',
-    client: 'Client',
-};
-
 export default function EditUser({ targetUser, businesses, availableRoles }: Props) {
+    const { t } = useTranslation();
     const { permissions } = usePage<SharedData>().props;
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Users', href: '/users' },
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('breadcrumbs.users'), href: '/users' },
         { title: targetUser.name, href: `/users/${targetUser.id}/edit` },
     ];
+
+    const roleLabels: Record<string, string> = {
+        super_admin: t('users.role_super_admin'),
+        business_admin: t('users.role_business_admin'),
+        employee: t('users.role_employee'),
+        client: t('users.role_client'),
+    };
 
     const { data, setData, put, processing, errors, isDirty } = useForm({
         role: targetUser.role,
@@ -62,38 +64,38 @@ export default function EditUser({ targetUser, businesses, availableRoles }: Pro
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit ${targetUser.name}`} />
+            <Head title={`${t('users.edit_title')} - ${targetUser.name}`} />
             <div className="mx-auto max-w-2xl space-y-6 p-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit User</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('users.edit_title')}</h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Update role and business assignment for {targetUser.name}
+                        {t('users.edit_subtitle', { name: targetUser.name })}
                     </p>
                 </div>
 
                 {/* User Info (read-only) */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>User Information</CardTitle>
-                        <CardDescription>Basic user details (read-only)</CardDescription>
+                        <CardTitle>{t('users.info_card_title')}</CardTitle>
+                        <CardDescription>{t('users.info_card_readonly_desc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Name</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('common.name')}</p>
                                 <p className="text-sm">{targetUser.name}</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Email</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('common.email')}</p>
                                 <p className="text-sm">{targetUser.email}</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Phone</p>
-                                <p className="text-sm">{targetUser.phone || 'Not set'}</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('users.phone_label')}</p>
+                                <p className="text-sm">{targetUser.phone || t('users.not_set')}</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Current Business</p>
-                                <p className="text-sm">{targetUser.business?.name || 'None'}</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t('users.current_business_label')}</p>
+                                <p className="text-sm">{targetUser.business?.name || t('common.none')}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -102,12 +104,12 @@ export default function EditUser({ targetUser, businesses, availableRoles }: Pro
                 <form onSubmit={submit} className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Role & Assignment</CardTitle>
-                            <CardDescription>Change the user's role and business assignment</CardDescription>
+                            <CardTitle>{t('users.role_card_title')}</CardTitle>
+                            <CardDescription>{t('users.role_card_edit_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Role</Label>
+                                <Label>{t('users.role_label')}</Label>
                                 <Select value={data.role} onValueChange={(v) => setData('role', v as User['role'])}>
                                     <SelectTrigger>
                                         <SelectValue />
@@ -125,16 +127,16 @@ export default function EditUser({ targetUser, businesses, availableRoles }: Pro
 
                             {permissions.is_super_admin && (
                                 <div className="space-y-2">
-                                    <Label>Business</Label>
+                                    <Label>{t('users.business_label')}</Label>
                                     <Select
                                         value={data.business_id || 'none'}
                                         onValueChange={(v) => setData('business_id', v === 'none' ? '' : v)}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="No business" />
+                                            <SelectValue placeholder={t('users.no_business')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">No business</SelectItem>
+                                            <SelectItem value="none">{t('users.no_business')}</SelectItem>
                                             {businesses.map((b) => (
                                                 <SelectItem key={b.id} value={String(b.id)}>
                                                     {b.name}
@@ -144,7 +146,7 @@ export default function EditUser({ targetUser, businesses, availableRoles }: Pro
                                     </Select>
                                     <InputError message={errors.business_id} />
                                     <p className="text-xs text-muted-foreground">
-                                        Assign the user to a business. Super admins typically have no business.
+                                        {t('users.business_hint')}
                                     </p>
                                 </div>
                             )}
@@ -159,11 +161,11 @@ export default function EditUser({ targetUser, businesses, availableRoles }: Pro
                             disabled={processing}
                         >
                             <X className="mr-2 h-4 w-4" />
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
                             <Save className="mr-2 h-4 w-4" />
-                            {processing ? 'Saving...' : 'Save Changes'}
+                            {processing ? t('common.saving') : t('common.save_changes')}
                         </Button>
                     </div>
                 </form>

@@ -20,17 +20,19 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import InputError from '@/components/input-error';
-import { type BreadcrumbItem } from '@/types';
 import { Building2 } from 'lucide-react';
 import { Head } from '@inertiajs/react';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Businesses', href: '/businesses' },
-    { title: 'Create', href: '/businesses/create' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function CreateBusiness() {
+    const { t } = useTranslation();
+
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('breadcrumbs.businesses'), href: '/businesses' },
+        { title: t('breadcrumbs.create'), href: '/businesses/create' },
+    ];
+
     const { data, setData, post, processing, errors, isDirty } = useForm({
         name: '',
         slug: '',
@@ -62,11 +64,11 @@ export default function CreateBusiness() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create Business" />
+            <Head title={t('businesses.create_title')} />
             <div className="mx-auto max-w-2xl space-y-6 p-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Create Business</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">Add a new business to the platform</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('businesses.create_title')}</h1>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('businesses.create_subtitle')}</p>
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
@@ -74,45 +76,45 @@ export default function CreateBusiness() {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Building2 className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Business Information</CardTitle>
+                                <CardTitle>{t('businesses.info_card_title')}</CardTitle>
                             </div>
-                            <CardDescription>Basic details about the business</CardDescription>
+                            <CardDescription>{t('businesses.info_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Business Name</Label>
+                                <Label htmlFor="name">{t('businesses.name_label')}</Label>
                                 <Input
                                     id="name"
                                     value={data.name}
                                     onChange={(e) => handleNameChange(e.target.value)}
-                                    placeholder="e.g., Luxe Beauty Salon"
+                                    placeholder="ej: Luxe Beauty Salon"
                                     required
                                 />
                                 <InputError message={errors.name} />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="slug">URL Slug</Label>
+                                <Label htmlFor="slug">{t('businesses.slug_label')}</Label>
                                 <Input
                                     id="slug"
                                     value={data.slug}
                                     onChange={(e) => setData('slug', e.target.value)}
-                                    placeholder="e.g., luxe-beauty-salon"
+                                    placeholder="ej: luxe-beauty-salon"
                                     required
                                 />
                                 <InputError message={errors.slug} />
                                 <p className="text-xs text-muted-foreground">
-                                    Used for the business URL. Auto-generated from name.
+                                    {t('businesses.slug_hint')}
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description">{t('businesses.description_label')}</Label>
                                 <Textarea
                                     id="description"
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
-                                    placeholder="Describe the business..."
+                                    placeholder={t('businesses.description_placeholder')}
                                     rows={3}
                                 />
                                 <InputError message={errors.description} />
@@ -120,36 +122,36 @@ export default function CreateBusiness() {
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">{t('businesses.email_label')}</Label>
                                     <Input
                                         id="email"
                                         type="email"
                                         value={data.email}
                                         onChange={(e) => setData('email', e.target.value)}
-                                        placeholder="contact@business.com"
+                                        placeholder="contacto@negocio.com"
                                         required
                                     />
                                     <InputError message={errors.email} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="phone">Phone</Label>
+                                    <Label htmlFor="phone">{t('businesses.phone_label')}</Label>
                                     <Input
                                         id="phone"
                                         value={data.phone}
                                         onChange={(e) => setData('phone', e.target.value)}
-                                        placeholder="+1 (555) 123-4567"
+                                        placeholder="+1 (809) 555-1234"
                                     />
                                     <InputError message={errors.phone} />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="address">Address</Label>
+                                <Label htmlFor="address">{t('businesses.address_label')}</Label>
                                 <Input
                                     id="address"
                                     value={data.address}
                                     onChange={(e) => setData('address', e.target.value)}
-                                    placeholder="123 Main St, City, State"
+                                    placeholder="Calle 123, Ciudad, Estado"
                                 />
                                 <InputError message={errors.address} />
                             </div>
@@ -158,32 +160,32 @@ export default function CreateBusiness() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Settings</CardTitle>
-                            <CardDescription>Business status and configuration</CardDescription>
+                            <CardTitle>{t('businesses.settings_card_title')}</CardTitle>
+                            <CardDescription>{t('businesses.settings_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label>Status</Label>
+                                    <Label>{t('common.status')}</Label>
                                     <Select value={data.status} onValueChange={(v) => setData('status', v)}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="active">Active</SelectItem>
-                                            <SelectItem value="inactive">Inactive</SelectItem>
-                                            <SelectItem value="suspended">Suspended</SelectItem>
+                                            <SelectItem value="active">{t('businesses.status_active')}</SelectItem>
+                                            <SelectItem value="inactive">{t('businesses.status_inactive')}</SelectItem>
+                                            <SelectItem value="suspended">{t('businesses.status_suspended')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <InputError message={errors.status} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="timezone">Timezone</Label>
+                                    <Label htmlFor="timezone">{t('businesses.timezone_label')}</Label>
                                     <Input
                                         id="timezone"
                                         value={data.timezone}
                                         onChange={(e) => setData('timezone', e.target.value)}
-                                        placeholder="America/Mexico_City"
+                                        placeholder="America/Santo_Domingo"
                                     />
                                     <InputError message={errors.timezone} />
                                 </div>
@@ -193,13 +195,13 @@ export default function CreateBusiness() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Loyalty Program</CardTitle>
-                            <CardDescription>Configure the loyalty stamp system</CardDescription>
+                            <CardTitle>{t('businesses.loyalty_card_title')}</CardTitle>
+                            <CardDescription>{t('businesses.loyalty_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="loyalty_stamps_required">Stamps Required</Label>
+                                    <Label htmlFor="loyalty_stamps_required">{t('businesses.loyalty_stamps_label')}</Label>
                                     <Input
                                         id="loyalty_stamps_required"
                                         type="number"
@@ -213,12 +215,12 @@ export default function CreateBusiness() {
                                     <InputError message={errors.loyalty_stamps_required} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="loyalty_reward_description">Reward Description</Label>
+                                    <Label htmlFor="loyalty_reward_description">{t('businesses.loyalty_reward_label')}</Label>
                                     <Input
                                         id="loyalty_reward_description"
                                         value={data.loyalty_reward_description}
                                         onChange={(e) => setData('loyalty_reward_description', e.target.value)}
-                                        placeholder="e.g., Free haircut after 10 visits"
+                                        placeholder={t('businesses.loyalty_reward_placeholder')}
                                     />
                                     <InputError message={errors.loyalty_reward_description} />
                                 </div>
@@ -233,10 +235,10 @@ export default function CreateBusiness() {
                             onClick={() => window.history.back()}
                             disabled={processing}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
-                            {processing ? 'Creating...' : 'Create Business'}
+                            {processing ? t('common.creating') : t('businesses.create_title')}
                         </Button>
                     </div>
                 </form>

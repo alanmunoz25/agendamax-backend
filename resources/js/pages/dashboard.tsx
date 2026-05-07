@@ -10,6 +10,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Building2, Users, Calendar, Briefcase, UserCog } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SuperAdminStats {
     total_businesses: number;
@@ -29,24 +30,19 @@ interface Props {
     stats: SuperAdminStats | BusinessAdminStats;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard().url,
-    },
-];
-
 function isSuperAdminStats(stats: SuperAdminStats | BusinessAdminStats): stats is SuperAdminStats {
     return 'total_businesses' in stats;
 }
 
 function SuperAdminDashboard({ stats }: { stats: SuperAdminStats }) {
+    const { t } = useTranslation();
+
     return (
         <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Businesses</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('dashboard.total_businesses')}</CardTitle>
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -55,7 +51,7 @@ function SuperAdminDashboard({ stats }: { stats: SuperAdminStats }) {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Businesses</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('dashboard.active_businesses')}</CardTitle>
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -64,7 +60,7 @@ function SuperAdminDashboard({ stats }: { stats: SuperAdminStats }) {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('dashboard.total_users')}</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -76,7 +72,7 @@ function SuperAdminDashboard({ stats }: { stats: SuperAdminStats }) {
             {stats.recent_businesses.length > 0 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Recent Businesses</CardTitle>
+                        <CardTitle>{t('dashboard.recent_businesses')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
@@ -85,7 +81,7 @@ function SuperAdminDashboard({ stats }: { stats: SuperAdminStats }) {
                                     <div>
                                         <p className="font-medium text-foreground">{business.name}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            Created {new Date(business.created_at).toLocaleDateString()}
+                                            {t('dashboard.created')} {new Date(business.created_at).toLocaleDateString('es-DO')}
                                         </p>
                                     </div>
                                     <span
@@ -108,11 +104,13 @@ function SuperAdminDashboard({ stats }: { stats: SuperAdminStats }) {
 }
 
 function BusinessAdminDashboard({ stats }: { stats: BusinessAdminStats }) {
+    const { t } = useTranslation();
+
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboard.today_appointments')}</CardTitle>
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -121,7 +119,7 @@ function BusinessAdminDashboard({ stats }: { stats: BusinessAdminStats }) {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboard.total_clients')}</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -130,7 +128,7 @@ function BusinessAdminDashboard({ stats }: { stats: BusinessAdminStats }) {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboard.active_employees')}</CardTitle>
                     <UserCog className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -139,7 +137,7 @@ function BusinessAdminDashboard({ stats }: { stats: BusinessAdminStats }) {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Services</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboard.total_services')}</CardTitle>
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -152,17 +150,25 @@ function BusinessAdminDashboard({ stats }: { stats: BusinessAdminStats }) {
 
 export default function Dashboard({ stats }: Props) {
     const { permissions } = usePage<SharedData>().props;
+    const { t } = useTranslation();
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: t('breadcrumbs.dashboard'),
+            href: dashboard().url,
+        },
+    ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+            <Head title={t('dashboard.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('dashboard.title')}</h1>
                     <p className="mt-2 text-sm text-muted-foreground">
                         {permissions.is_super_admin
-                            ? 'Platform overview and management'
-                            : 'Your business at a glance'}
+                            ? t('dashboard.subtitle_super')
+                            : t('dashboard.subtitle_admin')}
                     </p>
                 </div>
 

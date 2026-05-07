@@ -87,6 +87,7 @@ export default function PosIndex() {
     const [checkoutSource, setCheckoutSource] = useState<'appointment' | 'walkin'>('walkin');
     const [selectedAppointment, setSelectedAppointment] = useState<AppointmentForPos | null>(null);
     const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
+    const [walkInItems, setWalkInItems] = useState<WalkInItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredAppointments = useMemo(() => {
@@ -123,7 +124,24 @@ export default function PosIndex() {
         setDrawerOpen(true);
     }
 
+    function handleWalkInItemsChange(items: WalkInItem[]) {
+        setWalkInItems(items);
+        // Keep checkoutItems in sync so CheckoutDrawer reflects real-time walk-in items
+        if (checkoutSource === 'walkin') {
+            setCheckoutItems(
+                items.map((i) => ({
+                    id: i.id,
+                    type: i.type,
+                    name: i.name,
+                    unit_price: i.unit_price,
+                    qty: i.qty,
+                })),
+            );
+        }
+    }
+
     function handleCheckoutSuccess() {
+        setWalkInItems([]);
         setDrawerOpen(false);
         router.reload();
     }
@@ -211,6 +229,8 @@ export default function PosIndex() {
                         services={services_catalog ?? []}
                         products={products_catalog ?? []}
                         categories={service_categories}
+                        items={walkInItems}
+                        onItemsChange={handleWalkInItemsChange}
                         onOpenCheckout={handleCheckoutFromWalkIn}
                         isLoadingCatalog={services_catalog === null}
                     />

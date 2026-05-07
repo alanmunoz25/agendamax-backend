@@ -17,7 +17,18 @@ class EnsureUserHasBusiness
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && ! auth()->user()->business_id && ! auth()->user()->isSuperAdmin()) {
+        $user = auth()->user();
+
+        if (! auth()->check()) {
+            return $next($request);
+        }
+
+        // Clients navigate cross-business — no business context required.
+        if ($user->isClient()) {
+            return $next($request);
+        }
+
+        if (! $user->primary_business_id && ! $user->isSuperAdmin()) {
             abort(403, 'User does not belong to a business.');
         }
 

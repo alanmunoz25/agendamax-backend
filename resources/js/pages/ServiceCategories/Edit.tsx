@@ -23,6 +23,7 @@ import {
 import InputError from '@/components/input-error';
 import type { ServiceCategory } from '@/types/models';
 import { ArrowLeft, FolderTree, Upload, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     category: ServiceCategory;
@@ -30,6 +31,8 @@ interface Props {
 }
 
 export default function EditServiceCategory({ category, parentCategories }: Props) {
+    const { t } = useTranslation();
+
     const { data, setData, post, processing, errors, isDirty } = useForm<{
         _method: string;
         name: string;
@@ -81,22 +84,23 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
 
     return (
         <AppLayout
+            title={t('categories.edit_title')}
             breadcrumbs={[
-                { title: 'Dashboard', href: '/dashboard' },
-                { title: 'Categories', href: '/service-categories' },
-                { title: category.name, href: '#' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.categories'), href: '/service-categories' },
+                { label: category.name },
             ]}
         >
             <div className="mx-auto max-w-2xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Category</h1>
-                        <p className="mt-2 text-sm text-muted-foreground">Update {category.name} details</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('categories.edit_title')}</h1>
+                        <p className="mt-2 text-sm text-muted-foreground">{t('categories.edit_subtitle', { name: category.name })}</p>
                     </div>
                     <Button variant="outline" onClick={() => router.visit('/service-categories')}>
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
+                        {t('common.back')}
                     </Button>
                 </div>
 
@@ -106,39 +110,39 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <FolderTree className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Category Information</CardTitle>
+                                <CardTitle>{t('categories.info_card_title')}</CardTitle>
                             </div>
-                            <CardDescription>Basic details about the category</CardDescription>
+                            <CardDescription>{t('categories.info_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name" required>
-                                    Category Name
+                                    {t('categories.name_label')}
                                 </Label>
                                 <Input
                                     id="name"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="e.g., Hair Services, Nail Care, Spa Treatments"
+                                    placeholder={t('categories.name_placeholder')}
                                     required
                                 />
                                 <InputError message={errors.name} />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description">{t('categories.description_label')}</Label>
                                 <Textarea
                                     id="description"
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
-                                    placeholder="Describe this category..."
+                                    placeholder={t('categories.description_placeholder')}
                                     rows={3}
                                 />
                                 <InputError message={errors.description} />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Parent Category</Label>
+                                <Label>{t('categories.parent_label')}</Label>
                                 <Select
                                     value={data.parent_id ? String(data.parent_id) : 'none'}
                                     onValueChange={(value) =>
@@ -146,10 +150,10 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select parent category" />
+                                        <SelectValue placeholder={t('categories.parent_placeholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">None (Root Category)</SelectItem>
+                                        <SelectItem value="none">{t('categories.no_parent')}</SelectItem>
                                         {parentCategories.map((cat) => (
                                             <SelectItem key={cat.id} value={String(cat.id)}>
                                                 {cat.name}
@@ -159,7 +163,7 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                                 </Select>
                                 <InputError message={errors.parent_id} />
                                 <p className="text-xs text-muted-foreground">
-                                    Leave empty to keep as a root category, or select a parent to make it a subcategory
+                                    {t('categories.parent_edit_hint')}
                                 </p>
                             </div>
                         </CardContent>
@@ -168,8 +172,8 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                     {/* Category Image */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Category Image</CardTitle>
-                            <CardDescription>Upload a JPG, PNG, or WebP image (max 2MB)</CardDescription>
+                            <CardTitle>{t('categories.image_card_title')}</CardTitle>
+                            <CardDescription>{t('categories.image_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {imagePreview ? (
@@ -198,10 +202,10 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                                 >
                                     <Upload className="mb-4 h-10 w-10 text-muted-foreground/50" />
                                     <p className="text-sm font-medium text-muted-foreground">
-                                        Click to upload or drag and drop
+                                        {t('categories.image_upload_cta')}
                                     </p>
                                     <p className="mt-1 text-xs text-muted-foreground/75">
-                                        JPG, JPEG, PNG, or WebP (max 2MB)
+                                        {t('categories.image_upload_formats')}
                                     </p>
                                 </div>
                             )}
@@ -219,12 +223,12 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                     {/* Display Settings */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Display Settings</CardTitle>
-                            <CardDescription>Control how this category appears</CardDescription>
+                            <CardTitle>{t('categories.display_card_title')}</CardTitle>
+                            <CardDescription>{t('categories.display_card_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="sort_order">Sort Order</Label>
+                                <Label htmlFor="sort_order">{t('categories.sort_order_label')}</Label>
                                 <Input
                                     id="sort_order"
                                     type="number"
@@ -235,15 +239,15 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                                 />
                                 <InputError message={errors.sort_order} />
                                 <p className="text-xs text-muted-foreground">
-                                    Categories with lower numbers appear first
+                                    {t('categories.sort_order_hint')}
                                 </p>
                             </div>
 
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                    <Label htmlFor="is_active">Active Status</Label>
+                                    <Label htmlFor="is_active">{t('categories.active_status_label')}</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        Only active categories are visible to clients
+                                        {t('categories.active_status_hint')}
                                     </p>
                                 </div>
                                 <Switch
@@ -265,10 +269,10 @@ export default function EditServiceCategory({ category, parentCategories }: Prop
                             disabled={processing}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back
+                            {t('common.back')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
-                            {processing ? 'Saving...' : 'Save Changes'}
+                            {processing ? t('common.saving') : t('common.save_changes')}
                         </Button>
                     </div>
                 </form>

@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\AppointmentServiceController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\Client\ClientAppointmentsWebController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\DashboardController;
@@ -13,6 +15,7 @@ use App\Http\Controllers\ElectronicInvoice\SettingsController as EiSettingsContr
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
 use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\Payroll\CommissionRuleController;
 use App\Http\Controllers\Payroll\PayrollAdjustmentController;
 use App\Http\Controllers\Payroll\PayrollDashboardController;
@@ -24,6 +27,8 @@ use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Pos\PosShiftController;
 use App\Http\Controllers\Pos\PosTicketController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\Public\PublicBusinessController;
+use App\Http\Controllers\Public\PublicDiscoverController;
 use App\Http\Controllers\PublicCourseController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\ServiceCategoryController;
@@ -35,6 +40,19 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('homepage');
 })->name('home');
+
+// Legacy redirect: /{slug}/courses → /negocio/{slug}/courses (301 permanent)
+Route::get('/{businessSlug}/courses/{path?}', function (string $businessSlug, ?string $path = null): \Illuminate\Http\RedirectResponse {
+    $url = '/negocio/'.$businessSlug.'/courses'.($path !== null ? '/'.$path : '');
+
+    return redirect($url, 301);
+})->where('businessSlug', '[a-z0-9-]+')->where('path', '.*');
+
+// ── Health checks (no auth — consumed by Kubernetes / load balancers) ───────
+Route::middleware('throttle:60,1')->prefix('health')->group(function () {
+    Route::get('/', [HealthController::class, 'liveness'])->name('health.liveness');
+    Route::get('/ready', [HealthController::class, 'readiness'])->name('health.readiness');
+});
 
 // Routes accessible without business middleware (super_admin + dashboard)
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -77,6 +95,14 @@ Route::middleware(['auth', 'verified', 'business'])->group(function () {
     // Appointments Management
     Route::get('/appointments/availability', [AppointmentController::class, 'availability'])->name('appointments.availability');
     Route::resource('appointments', AppointmentController::class);
+
+    // Appointment Service Lines
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::post('/appointments/{appointment}/services', [AppointmentServiceController::class, 'store'])
+            ->name('appointments.services.store');
+        Route::patch('/appointments/{appointment}/services/{appointmentService}', [AppointmentServiceController::class, 'update'])
+            ->name('appointments.services.update');
+    });
 
     // Clients Management
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
@@ -184,8 +210,27 @@ Route::middleware(['auth', 'verified', 'business'])->group(function () {
     Route::get('/courses/{course}/enrollments/export', [EnrollmentController::class, 'export'])->name('courses.enrollments.export');
 });
 
+// Public business discovery page (no auth required)
+Route::get('/buscar', [PublicDiscoverController::class, 'index'])
+    ->name('public.discover')
+    ->middleware('throttle:60,1');
+
+// SEO alias: /negocios → /buscar (301 permanent redirect)
+Route::redirect('/negocios', '/buscar', 301)->name('public.discover.alias');
+
+// Public business landing page (no auth required, SEO)
+Route::get('/negocio/{business:slug}', [PublicBusinessController::class, 'show'])
+    ->name('public.business.show')
+    ->middleware('throttle:60,1');
+
 // Public course pages (no auth required, SEO)
 Route::get('/{business:slug}/courses', [PublicCourseController::class, 'index'])->name('public.courses.index');
 Route::get('/{business:slug}/courses/{courseSlug}', [PublicCourseController::class, 'show'])->name('public.courses.show');
+
+// Client cross-business appointments history
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/mi-cuenta/citas', [ClientAppointmentsWebController::class, 'index'])
+        ->name('client.appointments.index');
+});
 
 require __DIR__.'/settings.php';

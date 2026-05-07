@@ -64,7 +64,7 @@ class EnrollmentServiceTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'student@example.com',
             'role' => 'lead',
-            'business_id' => $this->business->id,
+            'primary_business_id' => $this->business->id,
         ]);
     }
 
@@ -122,7 +122,7 @@ class EnrollmentServiceTest extends TestCase
         $this->assertEquals(
             1,
             User::where('email', 'existing@example.com')
-                ->where('business_id', $this->business->id)
+                ->where('primary_business_id', $this->business->id)
                 ->count()
         );
     }

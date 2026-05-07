@@ -35,7 +35,7 @@ class ServiceController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->input('search') . '%');
+            $query->where('name', 'like', '%'.$request->input('search').'%');
         }
 
         $perPage = min((int) $request->input('per_page', 15), 50);

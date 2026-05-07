@@ -22,6 +22,12 @@ export interface Business {
     settings: Record<string, unknown> | null;
     created_at: string;
     updated_at: string;
+    // Geo fields (added in F1 migration)
+    sector?: string | null;
+    province?: string | null;
+    country?: string;
+    latitude?: number | null;
+    longitude?: number | null;
     // Aggregates (from withCount)
     users_count?: number;
     employees_count?: number;

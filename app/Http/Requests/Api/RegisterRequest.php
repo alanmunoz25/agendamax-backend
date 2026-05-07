@@ -26,11 +26,15 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        $businessId = $this->resolveBusinessId();
-
-        $emailUnique = $businessId
-            ? Rule::unique('users', 'email')->where('business_id', $businessId)
-            : Rule::unique('users', 'email')->whereNull('business_id');
+        if (config('agendamax.client_multi_business')) {
+            // In multi-business mode, users are global — email must be globally unique.
+            $emailUnique = Rule::unique('users', 'email');
+        } else {
+            $businessId = $this->resolveBusinessId();
+            $emailUnique = $businessId
+                ? Rule::unique('users', 'email')->where('primary_business_id', $businessId)
+                : Rule::unique('users', 'email')->whereNull('primary_business_id');
+        }
 
         return [
             'name' => ['required', 'string', 'max:255'],

@@ -1,5 +1,7 @@
 <?php
 
+use App\Logging\ContextProcessor;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -125,6 +127,33 @@ return [
 
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
+        ],
+
+        /*
+        |----------------------------------------------------------------------
+        | Structured JSON channel (production)
+        |----------------------------------------------------------------------
+        | Daily rotation with 14 days retention.
+        | Includes: timestamp, level, message, request_id, user_id,
+        |           business_id, route, ip — injected by ContextProcessor.
+        |
+        | Set LOG_CHANNEL=structured in .env.production to activate.
+        */
+        'structured' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+            'formatter' => JsonFormatter::class,
+            'formatter_with' => [
+                'batchMode' => JsonFormatter::BATCH_MODE_NEWLINES,
+                'appendNewline' => true,
+            ],
+            'processors' => [
+                ContextProcessor::class,
+                PsrLogMessageProcessor::class,
+            ],
+            'replace_placeholders' => false,
         ],
 
     ],

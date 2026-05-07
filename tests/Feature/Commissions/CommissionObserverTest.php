@@ -11,6 +11,7 @@ use App\Models\Employee;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\CommissionService;
+use App\Services\PayrollService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -82,7 +83,7 @@ class CommissionObserverTest extends TestCase
         $job = new CalculateAppointmentCommission($appointment->id);
 
         // Run handle directly — appointment is cancelled, not completed
-        $job->handle(app(CommissionService::class));
+        $job->handle(app(CommissionService::class), app(PayrollService::class));
 
         $this->assertDatabaseCount('commission_records', 0);
     }

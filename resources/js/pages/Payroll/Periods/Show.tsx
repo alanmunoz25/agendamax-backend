@@ -88,6 +88,7 @@ interface Props {
     employees: Employee[];
     period_summary: PeriodSummary;
     can: Can;
+    pending_commissions_count: number;
 }
 
 function periodLabel(startsOn: string): string {
@@ -118,6 +119,7 @@ export default function Show({
     employees,
     period_summary,
     can,
+    pending_commissions_count,
 }: Props) {
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
     const [markPaidRecord, setMarkPaidRecord] = useState<EnrichedRecord | null>(null);
@@ -267,6 +269,20 @@ export default function Show({
                     <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
                         <Info className="h-4 w-4 shrink-0" />
                         Este período está cerrado. Solo lectura.
+                    </div>
+                )}
+
+                {/* Pending commissions banner — commissions auto-assigned but records not yet generated */}
+                {!isClosed && pending_commissions_count > 0 && (
+                    <div className="flex items-center gap-2 rounded-md border border-amber-400/40 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                        <span>
+                            Hay <strong>{pending_commissions_count}</strong> comisión
+                            {pending_commissions_count !== 1 ? 'es' : ''} cobrada
+                            {pending_commissions_count !== 1 ? 's' : ''} asignada
+                            {pending_commissions_count !== 1 ? 's' : ''} a este período sin record de nómina generado.
+                            Haz clic en <strong>Generar Records</strong> para incluirlas en la nómina.
+                        </span>
                     </div>
                 )}
 

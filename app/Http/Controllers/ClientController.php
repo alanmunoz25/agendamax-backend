@@ -29,9 +29,10 @@ class ClientController extends Controller
         $this->authorize('viewAny', User::class);
 
         $user = auth()->user();
+        $statusFilter = request()->query('status_filter', 'all');
 
         $query = User::query()
-            ->where('business_id', $user->business_id)
+            ->where('primary_business_id', $user->primary_business_id)
             ->whereIn('role', ['client', 'lead']);
 
         // Employees only see clients who have appointments assigned to them
@@ -62,11 +63,43 @@ class ClientController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        // Enrich each client with pivot data from user_business table.
+        // We filter by status_filter after pagination to keep the query simple.
+        $businessId = $user->primary_business_id;
+
+        $clients->getCollection()->transform(function (User $client) use ($businessId) {
+            $pivotRow = $client->businesses()
+                ->where('business_id', $businessId)
+                ->first();
+
+            $pivotStatus = $pivotRow?->pivot->status ?? null;
+            $blockedReason = $pivotRow?->pivot->blocked_reason ?? null;
+
+            $clientArray = $client->toArray();
+            $clientArray['pivot_status'] = $pivotStatus;
+            $clientArray['blocked_reason'] = $blockedReason;
+
+            return $clientArray;
+        });
+
+        // Apply status_filter post-pagination (collection filter).
+        if (in_array($statusFilter, ['active', 'blocked'], true)) {
+            $filtered = $clients->getCollection()->filter(
+                fn ($client) => ($client['pivot_status'] ?? null) === $statusFilter
+            )->values();
+
+            $clients->setCollection($filtered);
+        }
+
         return Inertia::render('Clients/Index', [
             'clients' => $clients,
-            'filters' => request()->only(['search', 'sort', 'direction']),
+            'filters' => array_merge(
+                request()->only(['search', 'sort', 'direction']),
+                ['status_filter' => $statusFilter]
+            ),
             'can' => [
                 'create' => $user->can('create', User::class),
+                'block' => $user->isBusinessAdmin() || $user->isSuperAdmin(),
             ],
         ]);
     }
@@ -95,7 +128,7 @@ class ClientController extends Controller
             'password' => bcrypt(str()->random(16)), // Random password, user will reset via email
         ]);
         $client->forceFill([
-            'business_id' => auth()->user()->business_id,
+            'business_id' => auth()->user()->primary_business_id,
             'role' => 'client',
         ])->save();
 
@@ -111,7 +144,7 @@ class ClientController extends Controller
         $user = auth()->user();
 
         // Ensure client belongs to current business
-        if ($client->business_id !== $user->business_id) {
+        if ($client->primary_business_id !== $user->primary_business_id) {
             abort(404);
         }
 
@@ -152,14 +185,27 @@ class ClientController extends Controller
         // Get loyalty progress
         $loyaltyProgress = $this->loyaltyService->getProgress(
             $client->id,
-            $client->business_id
+            $client->primary_business_id
         );
 
+        // Enrich client with pivot data (block status) for the current business.
+        $pivotRow = $client->businesses()
+            ->where('business_id', $user->primary_business_id)
+            ->first();
+
+        $clientData = $client->toArray();
+        $clientData['pivot_status'] = $pivotRow?->pivot->status ?? null;
+        $clientData['blocked_reason'] = $pivotRow?->pivot->blocked_reason ?? null;
+        $clientData['blocked_at'] = $pivotRow?->pivot->blocked_at?->toISOString() ?? null;
+
         return Inertia::render('Clients/Show', [
-            'client' => $client,
+            'client' => $clientData,
             'loyalty_progress' => $loyaltyProgress,
             'recent_appointments' => $client->appointments,
             'recent_stamps' => $client->stamps,
+            'can' => [
+                'block' => $user->isBusinessAdmin() || $user->isSuperAdmin(),
+            ],
         ]);
     }
 }

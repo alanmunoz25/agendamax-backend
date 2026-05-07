@@ -85,4 +85,42 @@ class SuperAdminScopeTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_super_admin_must_specify_business_id_for_pos_tickets_index(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('pos.tickets.index'));
+
+        $response->assertStatus(422);
+    }
+
+    public function test_super_admin_with_business_id_sees_only_that_business_tickets(): void
+    {
+        $cashier1 = User::factory()->create(['business_id' => $this->business1->id, 'role' => 'business_admin']);
+        $cashier2 = User::factory()->create(['business_id' => $this->business2->id, 'role' => 'business_admin']);
+
+        PosTicket::factory()->create([
+            'business_id' => $this->business1->id,
+            'cashier_id' => $cashier1->id,
+        ]);
+
+        PosTicket::factory()->create([
+            'business_id' => $this->business2->id,
+            'cashier_id' => $cashier2->id,
+        ]);
+
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('pos.tickets.index', ['business_id' => $this->business1->id]));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page->has('tickets.data', 1));
+    }
+
+    public function test_business_admin_tickets_index_does_not_need_explicit_business_id(): void
+    {
+        $response = $this->actingAs($this->businessAdmin)
+            ->get(route('pos.tickets.index'));
+
+        $response->assertStatus(200);
+    }
 }

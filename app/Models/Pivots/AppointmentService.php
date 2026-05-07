@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models\Pivots;
 
+use App\Models\Employee;
+use App\Models\Service;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
@@ -17,4 +20,20 @@ class AppointmentService extends Pivot
 
     /** @var string */
     protected $table = 'appointment_services';
+
+    /**
+     * Get the service for this appointment line.
+     */
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    /**
+     * Get the employee assigned to this appointment line (nullable).
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
 }

@@ -31,6 +31,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $businessId = $request->resolveBusinessId();
+        $role = $businessId ? 'client' : 'lead';
 
         // role and business_id are excluded from $fillable to prevent mass-assignment.
         // Trusted controller action uses forceFill to assign them explicitly.
@@ -41,10 +42,29 @@ class AuthController extends Controller
             'password' => $request->password,
             'phone' => $request->phone,
         ]);
-        $user->forceFill([
-            'role' => 'client',
-            'business_id' => $businessId,
-        ])->save();
+
+        if (config('agendamax.client_multi_business') && $role === 'client') {
+            // Multi-business mode: client is global, do NOT set users.business_id.
+            // Create pivot row if an invitation code or business_id was supplied.
+            $user->forceFill([
+                'role' => 'client',
+                'business_id' => null,
+            ])->save();
+
+            if ($businessId) {
+                $user->businesses()->attach($businessId, [
+                    'role_in_business' => 'client',
+                    'status' => 'active',
+                    'joined_at' => now(),
+                ]);
+            }
+        } else {
+            // Legacy mode: set users.business_id as before.
+            $user->forceFill([
+                'role' => $role,
+                'business_id' => $businessId,
+            ])->save();
+        }
 
         $user->load('business');
 
@@ -134,6 +154,29 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Push token updated successfully',
+        ]);
+    }
+
+    /**
+     * Rotate the current Sanctum token.
+     *
+     * Revokes the current token and issues a new one. Mobile clients should
+     * call this endpoint on receiving a 401 so long as they still hold a
+     * valid (non-expired) token. If the token is already expired, the user
+     * must log in again.
+     */
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Revoke the token that was used for this request.
+        $request->user()->currentAccessToken()->delete();
+
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Token rotado exitosamente.',
+            'token' => $token,
         ]);
     }
 

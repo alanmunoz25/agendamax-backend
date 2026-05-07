@@ -10,23 +10,26 @@ import {
 import type { Employee, EmployeeSchedule } from '@/types/models';
 import { Calendar, Edit, Clock } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     employee: Employee;
     schedules: EmployeeSchedule[];
 }
 
-const DAYS = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
+const DAYS_KEYS = [
+    'schedule.sunday',
+    'schedule.monday',
+    'schedule.tuesday',
+    'schedule.wednesday',
+    'schedule.thursday',
+    'schedule.friday',
+    'schedule.saturday',
 ];
 
 export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
+    const { t } = useTranslation();
+
     // Group schedules by day
     const schedulesByDay = schedules.reduce(
         (acc, schedule) => {
@@ -46,15 +49,15 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
 
     return (
         <AppLayout
-            title="Employee Schedule"
+            title={t('schedule.title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Employees', href: '/employees' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.employees'), href: '/employees' },
                 {
-                    label: employee.user?.name || 'Employee',
+                    label: employee.user?.name || t('employees.title'),
                     href: `/employees/${employee.id}`,
                 },
-                { label: 'Schedule' },
+                { label: t('breadcrumbs.schedule') },
             ]}
         >
             <div className="mx-auto max-w-4xl space-y-6">
@@ -62,16 +65,16 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Weekly Schedule
+                            {t('schedule.weekly_title')}
                         </h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Viewing {employee.user?.name || 'employee'}'s weekly availability schedule
+                            {t('schedule.viewing_subtitle', { name: employee.user?.name || t('employees.title') })}
                         </p>
                     </div>
                     <Link href={`/employees/${employee.id}/schedules/edit`}>
                         <Button>
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit Schedule
+                            {t('schedule.edit_btn')}
                         </Button>
                     </Link>
                 </div>
@@ -81,10 +84,10 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Calendar className="h-5 w-5" />
-                            Weekly Availability
+                            {t('schedule.availability_title')}
                         </CardTitle>
                         <CardDescription>
-                            Available hours for booking appointments
+                            {t('schedule.availability_desc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -92,18 +95,18 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                             <div className="text-center py-12">
                                 <Clock className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
                                 <p className="text-sm text-muted-foreground mb-4">
-                                    No availability schedule set for this employee.
+                                    {t('schedule.no_schedule')}
                                 </p>
                                 <Link href={`/employees/${employee.id}/schedules/edit`}>
                                     <Button variant="outline">
                                         <Edit className="mr-2 h-4 w-4" />
-                                        Set Schedule
+                                        {t('schedule.set_btn')}
                                     </Button>
                                 </Link>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                {DAYS.map((day, index) => {
+                                {DAYS_KEYS.map((dayKey, index) => {
                                     const schedule = schedulesByDay[index];
                                     return (
                                         <div
@@ -112,7 +115,7 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="min-w-[120px]">
-                                                    <p className="font-medium">{day}</p>
+                                                    <p className="font-medium">{t(dayKey)}</p>
                                                 </div>
                                                 {schedule ? (
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -124,7 +127,7 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                                                     </div>
                                                 ) : (
                                                     <span className="text-sm text-muted-foreground italic">
-                                                        Not available
+                                                        {t('schedule.not_available')}
                                                     </span>
                                                 )}
                                             </div>
@@ -137,8 +140,8 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                                                     }`}
                                                 >
                                                     {schedule.is_available
-                                                        ? 'Available'
-                                                        : 'Unavailable'}
+                                                        ? t('schedule.available')
+                                                        : t('schedule.unavailable')}
                                                 </div>
                                             )}
                                         </div>
@@ -153,17 +156,17 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                 {schedules.length > 0 && (
                     <Card className="bg-muted/50">
                         <CardHeader>
-                            <CardTitle className="text-base">Summary</CardTitle>
+                            <CardTitle className="text-base">{t('schedule.summary_title')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Working Days:</span>
+                                <span className="text-muted-foreground">{t('schedule.working_days')}</span>
                                 <span className="font-medium">
-                                    {schedules.length} {schedules.length === 1 ? 'day' : 'days'} per week
+                                    {schedules.length} {schedules.length === 1 ? t('schedule.day') : t('schedule.days')} {t('schedule.per_week')}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Total Hours:</span>
+                                <span className="text-muted-foreground">{t('schedule.total_hours')}</span>
                                 <span className="font-medium">
                                     {schedules
                                         .reduce((total, schedule) => {
@@ -176,7 +179,7 @@ export default function ViewEmployeeSchedule({ employee, schedules }: Props) {
                                             return total + hours;
                                         }, 0)
                                         .toFixed(1)}{' '}
-                                    hours per week
+                                    {t('schedule.hours_per_week')}
                                 </span>
                             </div>
                         </CardContent>

@@ -29,7 +29,7 @@ class SettingsController extends Controller
         $feConfig = $business?->feConfig;
 
         $sequences = NcfRango::withoutGlobalScopes()
-            ->where('business_id', $user->business_id)
+            ->where('business_id', $user->primary_business_id)
             ->orderBy('tipo_ecf')
             ->get()
             ->map(fn ($seq) => [
@@ -152,7 +152,7 @@ class SettingsController extends Controller
             $feConfig->save();
         } catch (\Throwable $e) {
             Log::error('Certificate upload/conversion failed', [
-                'business_id' => $user->business_id,
+                'business_id' => $user->primary_business_id,
                 'error' => $e->getMessage(),
             ]);
 

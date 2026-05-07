@@ -50,7 +50,7 @@ class EnrollmentService
 
             // Find or create user as lead
             $user = User::where('email', $data['email'])
-                ->where('business_id', $course->business_id)
+                ->where('primary_business_id', $course->business_id)
                 ->first();
 
             if (! $user) {

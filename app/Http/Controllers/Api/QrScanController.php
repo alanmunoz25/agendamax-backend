@@ -21,8 +21,7 @@ class QrScanController extends Controller
 {
     public function __construct(
         private readonly LoyaltyService $loyaltyService
-    ) {
-    }
+    ) {}
 
     public function store(Request $request): JsonResponse
     {

@@ -58,7 +58,26 @@ Schedule::call(function () {
     }
 })->everyTenMinutes()->name('send-2h-reminders')->withoutOverlapping();
 
-// Clean up expired QR codes (older than 24 hours)
+// ── Backup ────────────────────────────────────────────────────────────────────
+// Daily at 02:00 UTC: database + certificates (storage/app/private/certificates)
+Schedule::command('backup:run')
+    ->dailyAt('02:00')
+    ->name('daily-backup')
+    ->withoutOverlapping()
+    ->onFailure(function () {
+        \Log::error('Daily backup failed', ['schedule' => 'daily-backup']);
+    })
+    ->onSuccess(function () {
+        \Log::info('Daily backup completed successfully', ['schedule' => 'daily-backup']);
+    });
+
+// Clean up old backups per retention policy (7 daily, 4 weekly, 3 monthly)
+Schedule::command('backup:clean')
+    ->dailyAt('02:30')
+    ->name('backup-cleanup')
+    ->withoutOverlapping();
+
+// ── Clean up expired QR codes (older than 24 hours) ─────────────────────────
 Schedule::call(function () {
     // QR codes are stored in appointments table as qr_code field
     // Clear QR codes that are older than 24 hours

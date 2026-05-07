@@ -14,9 +14,9 @@ import { DataTable, type Column } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { ConfirmationModal } from '@/components/confirmation-modal';
 import type { Business, PaginatedResponse } from '@/types/models';
-import { type BreadcrumbItem } from '@/types';
 import { Building2, Plus, Pencil, Trash2, Search, X, Eye } from 'lucide-react';
 import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 interface Filters {
     search?: string;
@@ -28,13 +28,23 @@ interface Props {
     filters: Filters;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Businesses', href: '/businesses' },
-];
-
 export default function BusinessesIndex({ businesses, filters }: Props) {
+    const { t } = useTranslation();
     const [deleteBusiness, setDeleteBusiness] = useState<Business | null>(null);
+
+    const breadcrumbs = [
+        { title: t('breadcrumbs.dashboard'), href: '/dashboard' },
+        { title: t('breadcrumbs.businesses'), href: '/businesses' },
+    ];
+
+    const getStatusLabel = (status: string) => {
+        const map: Record<string, string> = {
+            active: t('businesses.status_active'),
+            inactive: t('businesses.status_inactive'),
+            suspended: t('businesses.status_suspended'),
+        };
+        return map[status] ?? (status.charAt(0).toUpperCase() + status.slice(1));
+    };
 
     const handleSearch = (value: string) => {
         router.get(
@@ -67,7 +77,7 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
     const columns: Column<Business>[] = [
         {
             key: 'name',
-            label: 'Business',
+            label: t('businesses.col_name'),
             render: (business) => (
                 <div>
                     <div className="font-medium text-foreground">{business.name}</div>
@@ -79,7 +89,7 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
         },
         {
             key: 'status',
-            label: 'Status',
+            label: t('businesses.col_status'),
             render: (business) => {
                 const statusStyles: Record<string, string> = {
                     active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -90,35 +100,35 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
                     <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[business.status] || statusStyles.inactive}`}
                     >
-                        {business.status.charAt(0).toUpperCase() + business.status.slice(1)}
+                        {getStatusLabel(business.status)}
                     </span>
                 );
             },
         },
         {
             key: 'users_count',
-            label: 'Users',
+            label: t('businesses.col_users'),
             render: (business) => (
                 <span className="text-sm text-foreground">{business.users_count ?? 0}</span>
             ),
         },
         {
             key: 'employees_count',
-            label: 'Employees',
+            label: t('businesses.col_employees'),
             render: (business) => (
                 <span className="text-sm text-foreground">{business.employees_count ?? 0}</span>
             ),
         },
         {
             key: 'services_count',
-            label: 'Services',
+            label: t('businesses.col_services'),
             render: (business) => (
                 <span className="text-sm text-foreground">{business.services_count ?? 0}</span>
             ),
         },
         {
             key: 'actions',
-            label: 'Actions',
+            label: t('common.actions'),
             render: (business) => (
                 <div className="flex items-center gap-2">
                     <Button
@@ -160,19 +170,19 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Businesses" />
+            <Head title={t('businesses.title')} />
             <div className="space-y-6 p-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Businesses</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('businesses.title')}</h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Manage all businesses on the platform
+                            {t('businesses.manage_subtitle')}
                         </p>
                     </div>
                     <Button onClick={() => router.visit('/businesses/create')}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Business
+                        {t('businesses.add_business')}
                     </Button>
                 </div>
 
@@ -181,7 +191,7 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            placeholder="Search businesses..."
+                            placeholder={t('businesses.search_placeholder')}
                             value={filters.search || ''}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="pl-9"
@@ -190,20 +200,20 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
 
                     <Select value={filters.status || 'all'} onValueChange={handleStatusFilter}>
                         <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="All Status" />
+                            <SelectValue placeholder={t('businesses.all_status')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="suspended">Suspended</SelectItem>
+                            <SelectItem value="all">{t('businesses.all_status')}</SelectItem>
+                            <SelectItem value="active">{t('businesses.status_active')}</SelectItem>
+                            <SelectItem value="inactive">{t('businesses.status_inactive')}</SelectItem>
+                            <SelectItem value="suspended">{t('businesses.status_suspended')}</SelectItem>
                         </SelectContent>
                     </Select>
 
                     {hasActiveFilters && (
                         <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full sm:w-auto">
                             <X className="mr-2 h-4 w-4" />
-                            Clear
+                            {t('common.clear_filters')}
                         </Button>
                     )}
                 </div>
@@ -224,16 +234,16 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
                 ) : (
                     <EmptyState
                         icon={Building2}
-                        title="No businesses found"
+                        title={hasActiveFilters ? t('businesses.empty_title_filtered') : t('businesses.empty_title')}
                         description={
                             hasActiveFilters
-                                ? 'No businesses match your current filters. Try adjusting your search criteria.'
-                                : 'No businesses have been created yet. Get started by adding the first business.'
+                                ? t('businesses.empty_description_filtered')
+                                : t('businesses.empty_description')
                         }
                         action={
                             !hasActiveFilters
                                 ? {
-                                      label: 'Add Business',
+                                      label: t('businesses.add_business'),
                                       onClick: () => router.visit('/businesses/create'),
                                   }
                                 : undefined
@@ -246,8 +256,8 @@ export default function BusinessesIndex({ businesses, filters }: Props) {
                 open={deleteBusiness !== null}
                 onClose={() => setDeleteBusiness(null)}
                 onConfirm={handleDelete}
-                title="Delete Business"
-                description={`Are you sure you want to delete "${deleteBusiness?.name}"? This will remove all associated data. This action cannot be undone.`}
+                title={t('businesses.delete_title')}
+                description={t('businesses.delete_description', { name: deleteBusiness?.name })}
                 variant="destructive"
             />
         </AppLayout>

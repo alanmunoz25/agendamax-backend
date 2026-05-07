@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,6 +15,7 @@ import { EmptyState } from '@/components/empty-state';
 import { PosTicketStatusBadge } from '@/components/pos/pos-ticket-status-badge';
 import { EcfStatusBadge } from '@/components/pos/ecf-status-badge';
 import type { BreadcrumbItem } from '@/types';
+import type { PaginatedData } from '@/types/pagination';
 import { Receipt, CreditCard, Banknote, ArrowLeftRight } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -27,17 +29,13 @@ interface TicketListItem {
     ecf_error_message: string | null;
     client_name: string | null;
     employee: { user: { name: string } } | null;
+    employees: Array<{ id: number; name: string }>;
     payments: Array<{ method: 'cash' | 'card' | 'transfer'; amount: string }>;
     created_at: string;
 }
 
-interface PaginatedTickets {
-    data: TicketListItem[];
-    meta: { current_page: number; last_page: number; per_page: number; total: number };
-}
-
 interface TicketsIndexProps {
-    tickets: PaginatedTickets;
+    tickets: PaginatedData<TicketListItem>;
     filters: {
         search?: string | null;
         method?: string | null;
@@ -64,9 +62,12 @@ function formatCurrency(amount: string): string {
 }
 
 export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
+    const METHOD_ALL = '__all__';
+    const ECF_ALL = '__all__';
+
     const [search, setSearch] = useState(filters.search ?? '');
-    const [method, setMethod] = useState(filters.method ?? '');
-    const [ecfStatus, setEcfStatus] = useState(filters.ecf_status ?? '');
+    const [method, setMethod] = useState(filters.method ?? METHOD_ALL);
+    const [ecfStatus, setEcfStatus] = useState(filters.ecf_status ?? ECF_ALL);
     const [date, setDate] = useState(filters.date ?? '');
 
     // Debounce search input
@@ -77,8 +78,13 @@ export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
         return () => clearTimeout(timer);
     }, [search]);
 
-    function applyFilters(overrides: Partial<typeof filters> = {}) {
-        const current = { search, method, ecf_status: ecfStatus, date };
+    function applyFilters(overrides: Partial<{ search: string; method: string; ecf_status: string; date: string }> = {}) {
+        const current = {
+            search,
+            method: method === METHOD_ALL ? '' : method,
+            ecf_status: ecfStatus === ECF_ALL ? '' : ecfStatus,
+            date,
+        };
         const merged = { ...current, ...overrides };
 
         const params: Record<string, string> = {};
@@ -92,20 +98,18 @@ export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
 
     function handleMethodChange(value: string) {
         setMethod(value);
-        applyFilters({ method: value });
+        applyFilters({ method: value === METHOD_ALL ? '' : value });
     }
 
     function handleEcfStatusChange(value: string) {
         setEcfStatus(value);
-        applyFilters({ ecf_status: value });
+        applyFilters({ ecf_status: value === ECF_ALL ? '' : value });
     }
 
     function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
         setDate(e.target.value);
         applyFilters({ date: e.target.value });
     }
-
-    const { meta } = tickets;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -130,7 +134,7 @@ export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
                                 <SelectValue placeholder="Todos los métodos" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Todos los métodos</SelectItem>
+                                <SelectItem value={METHOD_ALL}>Todos los métodos</SelectItem>
                                 <SelectItem value="cash">Efectivo</SelectItem>
                                 <SelectItem value="card">Tarjeta</SelectItem>
                                 <SelectItem value="transfer">Transferencia</SelectItem>
@@ -142,7 +146,7 @@ export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
                                 <SelectValue placeholder="Todos los e-CF" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Todos los e-CF</SelectItem>
+                                <SelectItem value={ECF_ALL}>Todos los e-CF</SelectItem>
                                 <SelectItem value="emitted">Emitida</SelectItem>
                                 <SelectItem value="pending">Pendiente</SelectItem>
                                 <SelectItem value="error">Error</SelectItem>
@@ -202,7 +206,15 @@ export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-foreground">
-                                                {ticket.employee?.user.name ?? (
+                                                {ticket.employees && ticket.employees.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {ticket.employees.map((e) => (
+                                                            <Badge key={e.id} variant="secondary" className="text-xs">
+                                                                {e.name}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                ) : (
                                                     <span className="text-muted-foreground">—</span>
                                                 )}
                                             </td>
@@ -248,22 +260,22 @@ export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
                         </div>
 
                         {/* Pagination */}
-                        {meta.last_page > 1 && (
+                        {tickets.last_page > 1 && (
                             <div className="flex items-center justify-between border-t border-border px-4 py-3">
                                 <p className="text-sm text-muted-foreground">
-                                    Página {meta.current_page} de {meta.last_page}
-                                    {' '}({meta.total} tickets)
+                                    Página {tickets.current_page} de {tickets.last_page}
+                                    {' '}({tickets.total} tickets)
                                 </p>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        disabled={meta.current_page <= 1}
+                                        disabled={tickets.current_page <= 1}
                                         onClick={() => {
-                                            const params: Record<string, string | number> = { page: meta.current_page - 1 };
+                                            const params: Record<string, string | number> = { page: tickets.current_page - 1 };
                                             if (search) { params.search = search; }
-                                            if (method) { params.method = method; }
-                                            if (ecfStatus) { params.ecf_status = ecfStatus; }
+                                            if (method && method !== METHOD_ALL) { params.method = method; }
+                                            if (ecfStatus && ecfStatus !== ECF_ALL) { params.ecf_status = ecfStatus; }
                                             if (date) { params.date = date; }
                                             router.get('/pos/tickets', params, { preserveState: true });
                                         }}
@@ -273,12 +285,12 @@ export default function TicketsIndex({ tickets, filters }: TicketsIndexProps) {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        disabled={meta.current_page >= meta.last_page}
+                                        disabled={tickets.current_page >= tickets.last_page}
                                         onClick={() => {
-                                            const params: Record<string, string | number> = { page: meta.current_page + 1 };
+                                            const params: Record<string, string | number> = { page: tickets.current_page + 1 };
                                             if (search) { params.search = search; }
-                                            if (method) { params.method = method; }
-                                            if (ecfStatus) { params.ecf_status = ecfStatus; }
+                                            if (method && method !== METHOD_ALL) { params.method = method; }
+                                            if (ecfStatus && ecfStatus !== ECF_ALL) { params.ecf_status = ecfStatus; }
                                             if (date) { params.date = date; }
                                             router.get('/pos/tickets', params, { preserveState: true });
                                         }}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\Appointment;
+use App\Models\Business;
 use App\Models\User;
 
 class AppointmentPolicy
@@ -64,25 +65,45 @@ class AppointmentPolicy
 
     /**
      * Determine whether the user can create appointments.
+     *
+     * When $business is provided (F3 multi-business), client access is gated
+     * by enrollment + not blocked. For staff roles, the $business must match
+     * the user's business. When $business is null (legacy context), staff and
+     * client access falls back to checking user->business_id is set.
      */
-    public function create(User $user): bool
+    public function create(User $user, ?Business $business = null): bool
     {
-        // Super admin can create appointments
         if ($user->isSuperAdmin()) {
             return true;
         }
 
-        // Business admin can create appointments
         if ($user->isBusinessAdmin()) {
+            if ($business !== null) {
+                return $user->business_id === $business->id;
+            }
+
+            // Legacy fallback: web admin context without explicit Business model
             return $user->business_id !== null;
         }
 
-        // Clients can create their own appointments
+        if ($user->isEmployee()) {
+            if ($business !== null) {
+                return $user->business_id === $business->id;
+            }
+
+            // Employees cannot create appointments in legacy context (no explicit Business passed)
+            return false;
+        }
+
         if ($user->isClient()) {
+            if ($business !== null) {
+                return $user->canBookIn($business);
+            }
+
+            // Legacy fallback: client with business_id set on user row
             return $user->business_id !== null;
         }
 
-        // Employees cannot create appointments
         return false;
     }
 

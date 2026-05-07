@@ -23,6 +23,7 @@ import {
 import InputError from '@/components/input-error';
 import type { Service, ServiceCategory } from '@/types/models';
 import { Briefcase } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     service: Service;
@@ -30,6 +31,8 @@ interface Props {
 }
 
 export default function EditService({ service, serviceCategories }: Props) {
+    const { t } = useTranslation();
+
     // Determine initial parent from the service's category relationship
     const initialParentId = service.service_category?.parent_id
         ? String(service.service_category.parent_id)
@@ -75,22 +78,22 @@ export default function EditService({ service, serviceCategories }: Props) {
 
     return (
         <AppLayout
-            title="Edit Service"
+            title={t('services.edit_title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Services', href: '/services' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.services'), href: '/services' },
                 { label: service.name, href: `/services/${service.id}` },
-                { label: 'Edit' },
+                { label: t('breadcrumbs.edit') },
             ]}
         >
             <div className="mx-auto max-w-2xl space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        Edit Service
+                        {t('services.edit_title')}
                     </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Update {service.name} details
+                        {t('services.edit_subtitle', { name: service.name })}
                     </p>
                 </div>
 
@@ -100,57 +103,56 @@ export default function EditService({ service, serviceCategories }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Briefcase className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Service Information</CardTitle>
+                                <CardTitle>{t('services.info_card_title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Basic details about the service
+                                {t('services.info_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name" required>
-                                    Service Name
+                                    {t('services.name_label')}
                                 </Label>
                                 <Input
                                     id="name"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="e.g., Haircut, Massage, Consultation"
+                                    placeholder={t('services.name_placeholder')}
                                     required
                                 />
                                 <InputError message={errors.name} />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description">{t('services.description_label')}</Label>
                                 <Textarea
                                     id="description"
                                     value={data.description}
                                     onChange={(e) =>
                                         setData('description', e.target.value)
                                     }
-                                    placeholder="Describe the service in detail..."
+                                    placeholder={t('services.description_placeholder')}
                                     rows={3}
                                 />
                                 <InputError message={errors.description} />
                                 <p className="text-xs text-muted-foreground">
-                                    Provide a clear description of what this service
-                                    includes
+                                    {t('services.description_hint')}
                                 </p>
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label>Category</Label>
+                                    <Label>{t('services.category_label')}</Label>
                                     <Select
                                         value={selectedParentId || 'none'}
                                         onValueChange={handleParentChange}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select category" />
+                                            <SelectValue placeholder={t('services.category_placeholder')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">No category</SelectItem>
+                                            <SelectItem value="none">{t('services.no_category')}</SelectItem>
                                             {serviceCategories.map((cat) => (
                                                 <SelectItem key={cat.id} value={String(cat.id)}>
                                                     {cat.name}
@@ -162,17 +164,17 @@ export default function EditService({ service, serviceCategories }: Props) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>Subcategory</Label>
+                                    <Label>{t('services.subcategory_label')}</Label>
                                     <Select
                                         value={data.service_category_id ? String(data.service_category_id) : 'none'}
                                         onValueChange={handleSubcategoryChange}
                                         disabled={!selectedParentId || subcategories.length === 0}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select subcategory" />
+                                            <SelectValue placeholder={t('services.subcategory_placeholder')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">No subcategory</SelectItem>
+                                            <SelectItem value="none">{t('services.no_subcategory')}</SelectItem>
                                             {subcategories.map((sub) => (
                                                 <SelectItem key={sub.id} value={String(sub.id)}>
                                                     {sub.name}
@@ -189,16 +191,16 @@ export default function EditService({ service, serviceCategories }: Props) {
                     {/* Pricing & Duration */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Pricing & Duration</CardTitle>
+                            <CardTitle>{t('services.pricing_card_title')}</CardTitle>
                             <CardDescription>
-                                Set the price and estimated duration
+                                {t('services.pricing_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="price" required>
-                                        Price ($)
+                                        {t('services.price_label_rd')}
                                     </Label>
                                     <Input
                                         id="price"
@@ -218,7 +220,7 @@ export default function EditService({ service, serviceCategories }: Props) {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="duration" required>
-                                        Duration (minutes)
+                                        {t('services.duration_label_min')}
                                     </Label>
                                     <Input
                                         id="duration"
@@ -235,7 +237,7 @@ export default function EditService({ service, serviceCategories }: Props) {
                                     />
                                     <InputError message={errors.duration} />
                                     <p className="text-xs text-muted-foreground">
-                                        Estimated time to complete the service
+                                        {t('services.duration_hint')}
                                     </p>
                                 </div>
                             </div>
@@ -245,17 +247,17 @@ export default function EditService({ service, serviceCategories }: Props) {
                     {/* Availability */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Availability</CardTitle>
+                            <CardTitle>{t('services.availability_card_title')}</CardTitle>
                             <CardDescription>
-                                Control whether this service is bookable
+                                {t('services.availability_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                    <Label htmlFor="is_active">Active Status</Label>
+                                    <Label htmlFor="is_active">{t('services.active_status_label')}</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        Only active services can be booked by clients
+                                        {t('services.active_status_hint')}
                                     </p>
                                 </div>
                                 <Switch
@@ -278,10 +280,10 @@ export default function EditService({ service, serviceCategories }: Props) {
                             onClick={() => window.history.back()}
                             disabled={processing}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
-                            {processing ? 'Saving...' : 'Save Changes'}
+                            {processing ? t('common.saving') : t('common.save_changes')}
                         </Button>
                     </div>
                 </form>

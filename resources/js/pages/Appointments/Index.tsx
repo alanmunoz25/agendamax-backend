@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,7 @@ export default function AppointmentsIndex({
     statuses,
     can,
 }: Props) {
+    const { t } = useTranslation();
     const [cancelAppointment, setCancelAppointment] =
         useState<AppointmentWithEcf | null>(null);
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>(
@@ -121,7 +123,7 @@ export default function AppointmentsIndex({
     const columns: Column<AppointmentWithEcf>[] = [
         {
             key: 'client',
-            label: 'Client',
+            label: t('appointments.col_client'),
             render: (appointment) => (
                 <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
@@ -140,7 +142,7 @@ export default function AppointmentsIndex({
         },
         {
             key: 'service',
-            label: 'Service',
+            label: t('appointments.col_service'),
             render: (appointment) => (
                 <div>
                     <div className="font-medium text-foreground">
@@ -156,7 +158,7 @@ export default function AppointmentsIndex({
         },
         {
             key: 'employee',
-            label: 'Employee',
+            label: t('appointments.col_employee'),
             render: (appointment) => (
                 <div className="text-sm text-foreground">
                     {appointment.employee?.user?.name}
@@ -165,7 +167,7 @@ export default function AppointmentsIndex({
         },
         {
             key: 'scheduled_at',
-            label: 'Date & Time',
+            label: t('appointments.col_datetime'),
             sortable: true,
             render: (appointment) => (
                 <div>
@@ -188,7 +190,7 @@ export default function AppointmentsIndex({
         },
         {
             key: 'created_at',
-            label: 'Created',
+            label: t('appointments.col_created'),
             render: (appointment) => (
                 <div className="text-sm text-muted-foreground">
                     {new Date(appointment.created_at).toLocaleDateString()}
@@ -197,7 +199,7 @@ export default function AppointmentsIndex({
         },
         {
             key: 'status',
-            label: 'Status',
+            label: t('appointments.col_status'),
             render: (appointment) => (
                 <Badge variant={getStatusColor(appointment.status)}>
                     {appointment.status.replace('_', ' ')}
@@ -216,7 +218,7 @@ export default function AppointmentsIndex({
                             router.visit(`/appointments/${appointment.id}`)
                         }
                     >
-                        View
+                        {t('appointments.view')}
                     </Button>
                     {/* e-CF badge / indicator */}
                     {appointment.ecf_ncf ? (
@@ -247,7 +249,7 @@ export default function AppointmentsIndex({
                                 size="sm"
                                 onClick={() => setCancelAppointment(appointment)}
                             >
-                                Cancel
+                                {t('appointments.cancel_btn')}
                             </Button>
                         )}
                 </div>
@@ -265,10 +267,10 @@ export default function AppointmentsIndex({
 
     return (
         <AppLayout
-            title="Appointments"
+            title={t('appointments.title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Appointments' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.appointments') },
             ]}
         >
             <div className="mx-auto max-w-7xl space-y-6">
@@ -276,16 +278,16 @@ export default function AppointmentsIndex({
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Appointments
+                            {t('appointments.title')}
                         </h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            {can.manage ? 'Manage and view all appointments' : 'View your appointments'}
+                            {can.manage ? t('appointments.subtitle_manage') : t('appointments.subtitle_view')}
                         </p>
                     </div>
                     {can.create && (
                         <Button onClick={() => router.visit('/appointments/create')}>
                             <Plus className="mr-2 h-4 w-4" />
-                            New Appointment
+                            {t('appointments.new')}
                         </Button>
                     )}
                 </div>
@@ -300,7 +302,7 @@ export default function AppointmentsIndex({
                                 onClick={() => handleViewChange('list')}
                             >
                                 <List className="mr-2 h-4 w-4" />
-                                List
+                                {t('appointments.view_list')}
                             </Button>
                             <Button
                                 variant={
@@ -310,7 +312,7 @@ export default function AppointmentsIndex({
                                 onClick={() => handleViewChange('calendar')}
                             >
                                 <Calendar className="mr-2 h-4 w-4" />
-                                Calendar
+                                {t('appointments.view_calendar')}
                             </Button>
                         </div>
                         {hasFilters && (
@@ -320,7 +322,7 @@ export default function AppointmentsIndex({
                                 onClick={handleClearFilters}
                             >
                                 <X className="mr-2 h-4 w-4" />
-                                Clear Filters
+                                {t('common.clear_filters')}
                             </Button>
                         )}
                     </div>
@@ -328,7 +330,7 @@ export default function AppointmentsIndex({
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {/* Search */}
                         <Input
-                            placeholder="Search by client..."
+                            placeholder={t('appointments.search_placeholder')}
                             value={filters.search || ''}
                             onChange={(e) => handleSearch(e.target.value)}
                         />
@@ -341,10 +343,10 @@ export default function AppointmentsIndex({
                             }
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="All Statuses" />
+                                <SelectValue placeholder={t('appointments.all_statuses')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="all">{t('appointments.all_statuses')}</SelectItem>
                                 {statuses.map((status) => (
                                     <SelectItem key={status} value={status}>
                                         {status.replace('_', ' ')}
@@ -362,10 +364,10 @@ export default function AppointmentsIndex({
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="All Employees" />
+                                    <SelectValue placeholder={t('appointments.all_employees')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Employees</SelectItem>
+                                    <SelectItem value="all">{t('appointments.all_employees')}</SelectItem>
                                     {employees.map((employee) => (
                                         <SelectItem
                                             key={employee.id}
@@ -387,10 +389,10 @@ export default function AppointmentsIndex({
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="All Services" />
+                                    <SelectValue placeholder={t('appointments.all_services')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Services</SelectItem>
+                                    <SelectItem value="all">{t('appointments.all_services')}</SelectItem>
                                     {services.map((service) => (
                                         <SelectItem
                                             key={service.id}
@@ -409,16 +411,16 @@ export default function AppointmentsIndex({
                 {appointmentList.length === 0 ? (
                     <EmptyState
                         icon={Calendar}
-                        title={hasFilters ? 'No appointments found' : 'No appointments yet'}
+                        title={hasFilters ? t('appointments.empty_title_filtered') : t('appointments.empty_title')}
                         description={
                             hasFilters
-                                ? 'Try adjusting your filters to find what you are looking for.'
-                                : 'Get started by creating your first appointment.'
+                                ? t('appointments.empty_description_filtered')
+                                : t('appointments.empty_description')
                         }
                         action={
                             !hasFilters && can.create
                                 ? {
-                                      label: 'Create Appointment',
+                                      label: t('appointments.create_appointment'),
                                       onClick: () =>
                                           router.visit('/appointments/create'),
                                   }
@@ -428,10 +430,10 @@ export default function AppointmentsIndex({
                 ) : isCalendarView ? (
                     <div className="rounded-lg border border-border bg-card p-4">
                         <p className="text-center text-muted-foreground">
-                            Calendar view coming soon...
+                            {t('appointments.calendar_coming_soon')}
                         </p>
                         <p className="mt-2 text-center text-sm text-muted-foreground">
-                            Showing {appointmentList.length} appointments
+                            {t('appointments.showing_count', { count: appointmentList.length })}
                         </p>
                     </div>
                 ) : (
@@ -460,23 +462,19 @@ export default function AppointmentsIndex({
             <ConfirmationModal
                 open={cancelAppointment !== null}
                 onOpenChange={(open) => !open && setCancelAppointment(null)}
-                title="Cancel Appointment"
+                title={t('appointments.cancel_modal_title')}
                 description={
                     <div className="space-y-2">
                         <p>
-                            Are you sure you want to cancel this appointment with{' '}
-                            <span className="font-semibold">
-                                {cancelAppointment?.client?.name}
-                            </span>
-                            ?
+                            {t('appointments.cancel_modal_description', { client: cancelAppointment?.client?.name })}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            The client will be notified of the cancellation.
+                            {t('appointments.cancel_modal_note')}
                         </p>
                     </div>
                 }
-                confirmLabel="Cancel Appointment"
-                cancelLabel="Keep Appointment"
+                confirmLabel={t('appointments.cancel_confirm')}
+                cancelLabel={t('appointments.cancel_keep')}
                 onConfirm={handleCancel}
                 variant="destructive"
             />

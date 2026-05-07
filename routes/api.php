@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BusinessController;
+use App\Http\Controllers\Api\ClientAppointmentController;
+use App\Http\Controllers\Api\ClientBusinessController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EnrollmentController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\Api\QrScanController;
 use App\Http\Controllers\Api\ServiceCategoryController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\VisitController;
+use App\Http\Controllers\Business\BusinessClientController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,17 +43,33 @@ Route::prefix('v1')->group(function () {
         ->middleware('throttle:5,1');
     Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])
         ->middleware('throttle:3,10');
-    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
-        ->middleware('throttle:5,1');
+    // No route-level throttle here — the controller enforces per-code attempt limits
+    // (max 5 invalid attempts before the code is locked) via the password_reset_codes table.
+    // A separate route throttle would produce an English 429 from the framework before
+    // the controller's Spanish error message is reached.
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
     // Lead creation (public, for web app)
     Route::post('/leads', [LeadController::class, 'store']);
     Route::post('/leads/with-appointment', [LeadController::class, 'storeWithAppointment']);
 
-    // Business search (MUST be before {invitationCode} to avoid route conflict)
+    // Business discovery (root collection) — replaces /businesses/discover; must be before parameterized routes
+    Route::get('/businesses', [BusinessController::class, 'discover'])
+        ->middleware('throttle:60,1');
+
+    // Business search — must be before {invitationCode} catch-all
     Route::get('/businesses/search', [BusinessController::class, 'search']);
 
-    // Business Discovery
+    // Business by numeric ID — whereNumber ensures /businesses/4 resolves here, not to invitation-code catch-all
+    Route::get('/businesses/{business}', [BusinessController::class, 'show'])
+        ->whereNumber('business')
+        ->middleware('throttle:60,1');
+
+    // Business by slug (URL-friendly)
+    Route::get('/businesses/by-slug/{business:slug}', [BusinessController::class, 'showBySlug'])
+        ->middleware('throttle:60,1');
+
+    // Business by invitation code — legacy mobile contract; catches alphanumeric codes after numeric and slug routes
     Route::get('/businesses/{invitationCode}', [BusinessController::class, 'showByInvitationCode']);
     Route::get('/businesses/{businessId}/employees', [BusinessController::class, 'employees']);
     Route::get('/businesses/{businessId}/services/{serviceId}/employees', [BusinessController::class, 'serviceEmployees']);
@@ -91,6 +110,7 @@ Route::prefix('v1')->group(function () {
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // Authentication
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/refresh', [AuthController::class, 'refresh']);
     Route::get('/auth/user', [AuthController::class, 'user']);
     Route::patch('/auth/user', [AuthController::class, 'updateProfile']);
     Route::post('/auth/push-token', [AuthController::class, 'updatePushToken']);
@@ -135,4 +155,23 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::get('/periods/{period}', [\App\Http\Controllers\Api\Employee\PayrollController::class, 'periodDetail']);
         Route::get('/adjustments', [\App\Http\Controllers\Api\Employee\PayrollController::class, 'adjustments']);
     });
+
+    // Client enrollment (F3-A)
+    Route::middleware('throttle:30,1')
+        ->prefix('client')
+        ->group(function () {
+            Route::get('/businesses', [ClientBusinessController::class, 'index']);
+            Route::post('/businesses', [ClientBusinessController::class, 'store']);
+            Route::delete('/businesses/{business}', [ClientBusinessController::class, 'destroy']);
+        });
+
+    // Client cross-business appointments (F4-A)
+    Route::get('/client/appointments', [ClientAppointmentController::class, 'index'])
+        ->middleware('throttle:60,1');
+
+    // Business client management — block / unblock (F3-B)
+    Route::post('/businesses/{business}/clients/{user}/block', [BusinessClientController::class, 'block'])
+        ->middleware('throttle:10,1');
+    Route::post('/businesses/{business}/clients/{user}/unblock', [BusinessClientController::class, 'unblock'])
+        ->middleware('throttle:10,1');
 });

@@ -10,15 +10,28 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { ConfirmationModal } from '@/components/confirmation-modal';
-import type { Employee } from '@/types/models';
-import { Edit, Trash2, Users, Briefcase, Mail, User } from 'lucide-react';
+import type { Employee, EmployeeSchedule } from '@/types/models';
+import { Edit, Trash2, Users, Briefcase, Mail, User, Calendar, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
+import { DAYS_KEYS, formatTime } from '@/components/schedule-utils';
 
 interface Props {
     employee: Employee;
+    schedules: EmployeeSchedule[];
 }
 
-export default function ShowEmployee({ employee }: Props) {
+export default function ShowEmployee({ employee, schedules }: Props) {
+    const { t } = useTranslation();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const handleDelete = () => {
@@ -29,11 +42,11 @@ export default function ShowEmployee({ employee }: Props) {
 
     return (
         <AppLayout
-            title={employee.user?.name || 'Employee'}
+            title={employee.user?.name || t('employees.title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Employees', href: '/employees' },
-                { label: employee.user?.name || 'Employee' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.employees'), href: '/employees' },
+                { label: employee.user?.name || t('employees.title') },
             ]}
         >
             <div className="mx-auto max-w-4xl space-y-6">
@@ -61,7 +74,7 @@ export default function ShowEmployee({ employee }: Props) {
                                         employee.is_active ? 'success' : 'secondary'
                                     }
                                 >
-                                    {employee.is_active ? 'Active' : 'Inactive'}
+                                    {employee.is_active ? t('employees.status_active') : t('employees.status_inactive')}
                                 </Badge>
                             </div>
                             <p className="mt-1 text-sm text-muted-foreground">
@@ -78,14 +91,14 @@ export default function ShowEmployee({ employee }: Props) {
                             }
                         >
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit
+                            {t('common.edit')}
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => setShowDeleteModal(true)}
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
+                            {t('common.delete')}
                         </Button>
                     </div>
                 </div>
@@ -96,13 +109,13 @@ export default function ShowEmployee({ employee }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <User className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>User Information</CardTitle>
+                                <CardTitle>{t('employees.user_info_card_title')}</CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Name
+                                    {t('common.name')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
                                     {employee.user?.name}
@@ -110,7 +123,7 @@ export default function ShowEmployee({ employee }: Props) {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Email
+                                    {t('common.email')}
                                 </p>
                                 <div className="mt-1 flex items-center gap-2">
                                     <Mail className="h-4 w-4 text-muted-foreground" />
@@ -125,7 +138,7 @@ export default function ShowEmployee({ employee }: Props) {
                             {employee.user?.phone && (
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">
-                                        Phone
+                                        {t('common.phone')}
                                     </p>
                                     <p className="mt-1 text-base text-foreground">
                                         {employee.user.phone}
@@ -134,7 +147,7 @@ export default function ShowEmployee({ employee }: Props) {
                             )}
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Role
+                                    {t('common.role')}
                                 </p>
                                 <p className="mt-1 text-base capitalize text-foreground">
                                     {employee.user?.role?.replace('_', ' ')}
@@ -148,10 +161,10 @@ export default function ShowEmployee({ employee }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Briefcase className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Assigned Services</CardTitle>
+                                <CardTitle>{t('employees.assigned_services_title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Services this employee can provide
+                                {t('employees.assigned_services_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -174,7 +187,7 @@ export default function ShowEmployee({ employee }: Props) {
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-medium text-foreground">
-                                                    ${service.price}
+                                                    RD${service.price}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {service.duration} min
@@ -185,7 +198,7 @@ export default function ShowEmployee({ employee }: Props) {
                                 </div>
                             ) : (
                                 <p className="text-sm text-muted-foreground">
-                                    No services assigned yet
+                                    {t('employees.no_services')}
                                 </p>
                             )}
                         </CardContent>
@@ -195,7 +208,7 @@ export default function ShowEmployee({ employee }: Props) {
                     {employee.bio && (
                         <Card className="md:col-span-2">
                             <CardHeader>
-                                <CardTitle>Bio</CardTitle>
+                                <CardTitle>{t('employees.bio_card_title')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-muted-foreground">
@@ -205,15 +218,114 @@ export default function ShowEmployee({ employee }: Props) {
                         </Card>
                     )}
 
+                    {/* Weekly Schedules — Mejora #1 */}
+                    <Card className="md:col-span-2">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <CardTitle>{t('employees.schedule.title')}</CardTitle>
+                                        <CardDescription className="mt-1">
+                                            {t('employees.schedule.desc')}
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                                {schedules.length > 0 && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            router.visit(`/employees/${employee.id}/schedules/edit`)
+                                        }
+                                    >
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        {t('employees.schedule.edit_btn')}
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {schedules.length === 0 ? (
+                                <div className="py-12 text-center">
+                                    <Clock className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+                                    <p className="mb-1 font-medium text-foreground">
+                                        {t('employees.schedule.empty_title')}
+                                    </p>
+                                    <p className="mb-4 text-sm text-muted-foreground">
+                                        {t('employees.schedule.empty_desc')}
+                                    </p>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            router.visit(`/employees/${employee.id}/schedules/edit`)
+                                        }
+                                    >
+                                        <Calendar className="mr-2 h-4 w-4" />
+                                        {t('employees.schedule.configure_btn')}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{t('common.date')}</TableHead>
+                                            <TableHead>{t('schedule.availability_title').split(' ')[0]}</TableHead>
+                                            <TableHead>Fin</TableHead>
+                                            <TableHead>{t('common.status')}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {DAYS_KEYS.map((dayKey, index) => {
+                                            const schedule = schedules.find(
+                                                (s) => s.day_of_week === index
+                                            );
+                                            return (
+                                                <TableRow key={index}>
+                                                    <TableCell className="font-medium">
+                                                        {t(dayKey)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {schedule ? formatTime(schedule.start_time) : '—'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {schedule ? formatTime(schedule.end_time) : '—'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {schedule ? (
+                                                            <span
+                                                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                                                    schedule.is_available
+                                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                                                                }`}
+                                                            >
+                                                                {schedule.is_available
+                                                                    ? t('schedule.available')
+                                                                    : t('schedule.unavailable')}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-sm text-muted-foreground">—</span>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {/* Metadata */}
                     <Card className="md:col-span-2">
                         <CardHeader>
-                            <CardTitle>Additional Information</CardTitle>
+                            <CardTitle>{t('employees.additional_info_title')}</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Status
+                                    {t('common.status')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
                                     <Badge
@@ -223,28 +335,24 @@ export default function ShowEmployee({ employee }: Props) {
                                                 : 'secondary'
                                         }
                                     >
-                                        {employee.is_active ? 'Active' : 'Inactive'}
+                                        {employee.is_active ? t('employees.status_active') : t('employees.status_inactive')}
                                     </Badge>
                                 </p>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Created
+                                    {t('common.created_at')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
-                                    {new Date(
-                                        employee.created_at
-                                    ).toLocaleDateString()}
+                                    {format(new Date(employee.created_at), 'dd/MM/yyyy')}
                                 </p>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Last Updated
+                                    {t('common.updated_at')}
                                 </p>
                                 <p className="mt-1 text-base text-foreground">
-                                    {new Date(
-                                        employee.updated_at
-                                    ).toLocaleDateString()}
+                                    {format(new Date(employee.updated_at), 'dd/MM/yyyy')}
                                 </p>
                             </div>
                         </CardContent>
@@ -256,24 +364,19 @@ export default function ShowEmployee({ employee }: Props) {
             <ConfirmationModal
                 open={showDeleteModal}
                 onOpenChange={setShowDeleteModal}
-                title="Delete Employee"
+                title={t('employees.delete_title')}
                 description={
                     <div className="space-y-2">
                         <p>
-                            Are you sure you want to delete{' '}
-                            <span className="font-semibold">
-                                {employee.user?.name}
-                            </span>
-                            's employee profile?
+                            {t('employees.delete_description', { name: employee.user?.name })}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            This will remove their employee profile, but their user
-                            account will remain.
+                            {t('employees.delete_description_detail')}
                         </p>
                     </div>
                 }
-                confirmLabel="Delete"
-                cancelLabel="Cancel"
+                confirmLabel={t('employees.delete_confirm')}
+                cancelLabel={t('common.cancel')}
                 onConfirm={handleDelete}
                 variant="destructive"
             />

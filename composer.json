@@ -22,7 +22,8 @@
         "laravel/wayfinder": "^0.1.9",
         "mews/purifier": "*",
         "robrichards/xmlseclibs": "^3.1",
-        "selective/xmldsig": "^3.0"
+        "selective/xmldsig": "^3.0",
+        "spatie/laravel-backup": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

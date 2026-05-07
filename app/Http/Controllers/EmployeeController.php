@@ -50,12 +50,12 @@ class EmployeeController extends Controller
 
         // Get users in current business without employee profiles
         $availableUsers = User::query()
-            ->where('business_id', auth()->user()->business_id)
+            ->where('business_id', auth()->user()->primary_business_id)
             ->whereDoesntHave('employee')
             ->get(['id', 'name', 'email', 'role']);
 
         $services = Service::query()
-            ->where('business_id', auth()->user()->business_id)
+            ->where('business_id', auth()->user()->primary_business_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'category']);
@@ -75,7 +75,7 @@ class EmployeeController extends Controller
 
         $employee = Employee::create([
             ...$request->safe()->except('service_ids'),
-            'business_id' => auth()->user()->business_id,
+            'business_id' => auth()->user()->primary_business_id,
         ]);
 
         // Attach services if provided
@@ -94,10 +94,11 @@ class EmployeeController extends Controller
     {
         $this->authorize('view', $employee);
 
-        $employee->load(['user', 'services']);
+        $employee->load(['user', 'services.serviceCategory', 'schedules']);
 
         return Inertia::render('Employees/Show', [
             'employee' => $employee,
+            'schedules' => $employee->schedules,
         ]);
     }
 
@@ -111,7 +112,7 @@ class EmployeeController extends Controller
         $employee->load(['user', 'services']);
 
         $services = Service::query()
-            ->where('business_id', auth()->user()->business_id)
+            ->where('business_id', auth()->user()->primary_business_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'category']);

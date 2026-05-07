@@ -1,0 +1,432 @@
+app/Http/Requests/ElectronicInvoice/StoreIssuedEcfRequest.php:24:        if (! $user->isBusinessAdmin() && ! $user->isSuperAdmin()) {
+app/Http/Requests/ElectronicInvoice/StoreIssuedEcfRequest.php:28:        $config = $user->business?->feConfig;
+app/Http/Requests/ElectronicInvoice/RegisterManualVoidRequest.php:22:        return $user->isBusinessAdmin() || $user->isSuperAdmin();
+app/Http/Requests/Payroll/UpdateCommissionRuleRequest.php:19:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Http/Requests/Payroll/UpdateBaseSalaryRequest.php:19:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Http/Requests/Payroll/StoreCommissionRuleRequest.php:19:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Http/Requests/Pos/VoidPosTicketRequest.php:20:        if ($user->isSuperAdmin()) {
+app/Http/Requests/Pos/VoidPosTicketRequest.php:31:        if ($user->isBusinessAdmin()) {
+app/Http/Requests/Pos/VoidPosTicketRequest.php:32:            return $user->business_id === $ticket->business_id;
+app/Http/Requests/Pos/VoidPosTicketRequest.php:35:        if ($user->isEmployee()) {
+app/Http/Requests/Pos/VoidPosTicketRequest.php:36:            return $user->id === $ticket->cashier_id;
+app/Http/Requests/Pos/StorePosTicketRequest.php:21:            && ($user->isBusinessAdmin() || $user->isSuperAdmin() || $user->isEmployee());
+app/Http/Requests/Pos/StorePosShiftRequest.php:20:            && ($user->isBusinessAdmin() || $user->isSuperAdmin() || $user->isEmployee());
+app/Http/Requests/Appointments/StoreAppointmentServiceRequest.php:26:        if ($user->isSuperAdmin() || $user->isBusinessAdmin()) {
+app/Http/Controllers/Settings/ProfileController.php:56:        $user->delete();
+app/Http/Controllers/ElectronicInvoice/AuditController.php:19:        $businessId = $user->business_id;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:28:        $businessId = $user->business_id;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:29:        $feConfig = $user->business?->feConfig;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:66:        $businessId = $user->business_id;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:84:        $feConfig = $user->business?->feConfig;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:98:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:158:        abort_if($ecf->business_id !== $user->business_id, 403);
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:162:        $feConfig = $user->business?->feConfig;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:216:        abort_if($ecf->business_id !== $user->business_id, 403);
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:222:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:285:        abort_if($ecf->business_id !== $user->business_id, 403);
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:298:                'voided_by' => $user->id,
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:308:                    'registered_by' => $user->id,
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:324:        abort_if($ecf->business_id !== $user->business_id, 403);
+app/Http/Controllers/ElectronicInvoice/IssuedController.php:330:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/DashboardController.php:19:        $businessId = $user->business_id;
+app/Http/Controllers/ElectronicInvoice/DashboardController.php:21:        $feConfig = $user->business?->feConfig;
+app/Http/Controllers/ElectronicInvoice/SettingsController.php:28:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/SettingsController.php:32:            ->where('business_id', $user->primary_business_id)
+app/Http/Controllers/ElectronicInvoice/SettingsController.php:71:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/SettingsController.php:102:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/SettingsController.php:127:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/SettingsController.php:155:                'business_id' => $user->primary_business_id,
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:24:        $businessId = $user->business_id;
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:25:        $feConfig = $user->business?->feConfig;
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:58:        abort_if($received->business_id !== $user->business_id, 403);
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:60:        $feConfig = $user->business?->feConfig;
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:102:        abort_if($received->business_id !== $user->business_id, 403);
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:108:        $business = $user->business;
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:119:                'usuario' => $user->id,
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:128:                'approved_by' => $user->id,
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:140:        abort_if($received->business_id !== $user->business_id, 403);
+app/Http/Controllers/ElectronicInvoice/ReceivedController.php:151:        $business = $user->business;
+app/Http/Controllers/Client/ClientAppointmentsWebController.php:22:        if ($user->role !== 'client') {
+app/Http/Controllers/Client/ClientAppointmentsWebController.php:27:            ->where('client_id', $user->id)
+app/Http/Controllers/Client/ClientAppointmentsWebController.php:32:        $userBusinesses = $user->businesses()
+app/Http/Controllers/Payroll/PayrollDashboardController.php:25:        $businessId = $user->isSuperAdmin()
+app/Http/Controllers/Payroll/PayrollDashboardController.php:27:            : $user->business_id;
+app/Http/Controllers/Payroll/PayrollPeriodController.php:39:        $business = $user->business;
+app/Http/Controllers/Payroll/PayrollPeriodController.php:70:        $business = $user->business;
+app/Http/Controllers/Business/BusinessClientController.php:24:        $enrolledBusiness = $user->businesses()->where('business_id', $business->id)->first();
+app/Http/Controllers/Business/BusinessClientController.php:41:        $user->businesses()->updateExistingPivot($business->id, [
+app/Http/Controllers/Business/BusinessClientController.php:49:        $reloaded = $user->businesses()->where('business_id', $business->id)->first();
+app/Http/Controllers/Business/BusinessClientController.php:55:                'user_id' => $user->id,
+app/Http/Controllers/Business/BusinessClientController.php:72:        $enrolledBusiness = $user->businesses()->where('business_id', $business->id)->first();
+app/Http/Controllers/Business/BusinessClientController.php:80:        $user->businesses()->updateExistingPivot($business->id, [
+app/Http/Controllers/Business/BusinessClientController.php:90:                'user_id' => $user->id,
+app/Http/Controllers/UserController.php:104:        $user->fill([
+app/Http/Controllers/UserController.php:110:        $user->forceFill([
+app/Http/Controllers/UserController.php:125:            'targetUser' => $user->load('business'),
+app/Http/Controllers/UserController.php:157:        $user->forceFill($validated)->save();
+app/Http/Controllers/AppointmentController.php:40:        if ($user->isEmployee()) {
+app/Http/Controllers/AppointmentController.php:41:            $employeeId = $user->employee?->id;
+app/Http/Controllers/AppointmentController.php:47:        } elseif ($user->isClient()) {
+app/Http/Controllers/AppointmentController.php:48:            $query->where('client_id', $user->id);
+app/Http/Controllers/AppointmentController.php:107:        if (! $user->isClient()) {
+app/Http/Controllers/AppointmentController.php:108:            if (! $user->isEmployee()) {
+app/Http/Controllers/AppointmentController.php:111:                    ->where('business_id', $user->primary_business_id)
+app/Http/Controllers/AppointmentController.php:118:                ->where('business_id', $user->primary_business_id)
+app/Http/Controllers/AppointmentController.php:148:                'create' => $user->can('create', Appointment::class),
+app/Http/Controllers/AppointmentController.php:149:                'manage' => $user->isBusinessAdmin() || $user->isSuperAdmin(),
+app/Http/Controllers/AppointmentController.php:150:                'cancel' => ! $user->isEmployee(),
+app/Http/Controllers/AppointmentController.php:151:                'filter_employees' => ! $user->isEmployee() && ! $user->isClient(),
+app/Http/Controllers/AppointmentController.php:152:                'filter_services' => ! $user->isClient(),
+app/Http/Controllers/AppointmentController.php:222:        $feConfig = $user->business?->feConfig;
+app/Http/Controllers/AppointmentController.php:226:        $posEnabled = $user->business !== null;
+app/Http/Controllers/AppointmentController.php:230:            && ($user->isBusinessAdmin() || $user->isEmployee());
+app/Http/Controllers/AppointmentController.php:285:                'edit' => $user->can('update', $appointment),
+app/Http/Controllers/AppointmentController.php:286:                'cancel' => $user->can('delete', $appointment),
+app/Http/Controllers/DashboardController.php:22:        if ($user->isSuperAdmin()) {
+app/Http/Controllers/DashboardController.php:36:                'total_clients' => User::where('primary_business_id', $user->primary_business_id)->where('role', 'client')->count(),
+app/Http/Controllers/QrCodeController.php:59:            'business_id' => $user->business_id,
+app/Http/Controllers/Api/ClientBusinessController.php:26:        $businesses = $user->businesses()
+app/Http/Controllers/Api/ClientBusinessController.php:30:                $isPrimary = $user->business_id === $business->id ? 1 : 0;
+app/Http/Controllers/Api/ClientBusinessController.php:56:            ->where('user_id', $user->id)
+app/Http/Controllers/Api/ClientBusinessController.php:76:                ->where('user_id', $user->id)
+app/Http/Controllers/Api/ClientBusinessController.php:87:                'user_id' => $user->id,
+app/Http/Controllers/Api/ClientBusinessController.php:98:        if ($user->role === null || $user->role === 'lead') {
+app/Http/Controllers/Api/ClientBusinessController.php:99:            $user->forceFill(['role' => 'client'])->save();
+app/Http/Controllers/Api/ClientBusinessController.php:102:        $user->load('businesses');
+app/Http/Controllers/Api/ClientBusinessController.php:103:        $enrolledBusiness = $user->businesses()
+app/Http/Controllers/Api/ClientBusinessController.php:121:            ->where('user_id', $user->id)
+app/Http/Controllers/Api/ClientBusinessController.php:138:            ->where('user_id', $user->id)
+app/Http/Controllers/Api/QrScanController.php:45:        if ($user->role === 'client') {
+app/Http/Controllers/Api/QrScanController.php:48:                ->where('client_id', $user->id)
+app/Http/Controllers/Api/QrScanController.php:68:                'client_id' => $user->id,
+app/Http/Controllers/Api/QrScanController.php:78:                    'client_id' => $user->id,
+app/Http/Controllers/Api/QrScanController.php:88:            'client_id' => $user->id,
+app/Http/Controllers/Api/QrScanController.php:92:        $progress = $this->loyaltyService->getProgress($user->id, $qrCode->business_id);
+app/Http/Controllers/Api/Employee/PayrollController.php:179:        if (! $user->isEmployee()) {
+app/Http/Controllers/Api/Employee/PayrollController.php:184:            ->where('user_id', $user->id)
+app/Http/Controllers/Api/AuthController.php:39:        $user->fill([
+app/Http/Controllers/Api/AuthController.php:49:            $user->forceFill([
+app/Http/Controllers/Api/AuthController.php:55:                $user->businesses()->attach($businessId, [
+app/Http/Controllers/Api/AuthController.php:63:            $user->forceFill([
+app/Http/Controllers/Api/AuthController.php:69:        $user->load('business');
+app/Http/Controllers/Api/AuthController.php:71:        $token = $user->createToken('mobile-app')->plainTextToken;
+app/Http/Controllers/Api/AuthController.php:87:        if (! $user || ! Hash::check($request->password, $user->password)) {
+app/Http/Controllers/Api/AuthController.php:93:        $token = $user->createToken('mobile-app')->plainTextToken;
+app/Http/Controllers/Api/AuthController.php:120:        $user->load('business');
+app/Http/Controllers/Api/AuthController.php:133:        $user->fill($request->validated());
+app/Http/Controllers/Api/AuthController.php:134:        $user->save();
+app/Http/Controllers/Api/AuthController.php:137:            'data' => new UserResource($user->fresh()),
+app/Http/Controllers/Api/AuthController.php:175:        $token = $user->createToken('mobile-app')->plainTextToken;
+app/Http/Controllers/Api/AuthController.php:204:                'email' => $user->email,
+app/Http/Controllers/Api/AuthController.php:211:            Mail::to($user->email)->queue(new PasswordResetCodeMail($code));
+app/Http/Controllers/Api/AuthController.php:243:        $user->forceFill(['password' => Hash::make($request->input('password'))])->save();
+app/Http/Controllers/Api/AuthController.php:246:        $user->tokens()->delete();
+app/Http/Controllers/Api/LeadController.php:32:        $user->fill([
+app/Http/Controllers/Api/LeadController.php:41:        $user->forceFill([
+app/Http/Controllers/Api/QrCodeController.php:109:        if (! $user || ! in_array($user->role, ['business_admin', 'super_admin'], true)) {
+app/Http/Controllers/Api/QrCodeController.php:118:        if ($user && $user->business_id !== $qrCode->business_id) {
+app/Http/Controllers/Api/BusinessController.php:284:                    'employee_name' => $employee->user->name ?? null,
+app/Http/Controllers/Api/ClientAppointmentController.php:69:        $enrolledBusinesses = $user->businesses()
+app/Http/Controllers/Api/ClientAppointmentController.php:75:                ->where('client_id', $user->id)
+app/Http/Controllers/Api/LoyaltyController.php:35:        if (! $this->isClientOfBusiness($user->id, (int) $data['business_id']) && $user->role !== 'super_admin') {
+app/Http/Controllers/Api/LoyaltyController.php:41:        $progress = $this->loyaltyService->getProgress($user->id, (int) $data['business_id']);
+app/Http/Controllers/Api/LoyaltyController.php:57:        if (! $this->isClientOfBusiness($user->id, (int) $data['business_id']) && $user->role !== 'super_admin') {
+app/Http/Controllers/Api/LoyaltyController.php:62:            ->where('client_id', $user->id)
+app/Http/Controllers/Pos/PosShiftController.php:29:            $user->primary_business_id,
+app/Http/Controllers/Pos/PosShiftController.php:30:            $user->id,
+app/Http/Controllers/Pos/PosShiftController.php:35:            ->where('cashier_id', $user->id)
+app/Http/Controllers/Pos/PosShiftController.php:57:        if (PosShift::query()->where('business_id', $user->primary_business_id)->where('cashier_id', $cashierId)->whereDate('shift_date', $shiftDate)->exists()) {
+app/Http/Controllers/Pos/PosShiftController.php:61:        $summary = $this->posService->calculateShiftSummary($user->primary_business_id, $cashierId, $shiftDate);
+app/Http/Controllers/Pos/PosShiftController.php:73:            'business_id' => $user->primary_business_id,
+app/Http/Controllers/Pos/PosTicketController.php:31:        $businessId = $user->isSuperAdmin()
+app/Http/Controllers/Pos/PosTicketController.php:33:            : $user->business_id;
+app/Http/Controllers/Pos/PosController.php:28:        $businessId = $user->isSuperAdmin()
+app/Http/Controllers/Pos/PosController.php:30:            : $user->business_id;
+app/Http/Controllers/Pos/PosController.php:63:            ->where('cashier_id', $user->id)
+app/Http/Controllers/ClientController.php:35:            ->where('primary_business_id', $user->primary_business_id)
+app/Http/Controllers/ClientController.php:39:        if ($user->isEmployee()) {
+app/Http/Controllers/ClientController.php:40:            $employeeId = $user->employee?->id;
+app/Http/Controllers/ClientController.php:68:        $businessId = $user->primary_business_id;
+app/Http/Controllers/ClientController.php:101:                'create' => $user->can('create', User::class),
+app/Http/Controllers/ClientController.php:102:                'block' => $user->isBusinessAdmin() || $user->isSuperAdmin(),
+app/Http/Controllers/ClientController.php:147:        if ($client->primary_business_id !== $user->primary_business_id) {
+app/Http/Controllers/ClientController.php:154:        if ($user->isEmployee()) {
+app/Http/Controllers/ClientController.php:155:            $employeeId = $user->employee?->id;
+app/Http/Controllers/ClientController.php:171:            if ($user->isEmployee()) {
+app/Http/Controllers/ClientController.php:172:                $query->where('employee_id', $user->employee?->id);
+app/Http/Controllers/ClientController.php:193:            ->where('business_id', $user->primary_business_id)
+app/Http/Controllers/ClientController.php:207:                'block' => $user->isBusinessAdmin() || $user->isSuperAdmin(),
+app/Http/Resources/ClientBusinessResource.php:23:        $isPrimary = $user && $user->business_id === $this->id;
+app/Http/Resources/EmployeeResource.php:24:            'name' => $this->whenLoaded('user', fn () => $this->user->name),
+app/Http/Middleware/ResolveBusinessContext.php:59:            $pivot = $user->businesses()
+app/Http/Middleware/ResolveBusinessContext.php:85:        if ($user->isSuperAdmin() || $user->isBusinessAdmin() || $user->isEmployee()) {
+app/Http/Middleware/ResolveBusinessContext.php:86:            if ($user->primary_business_id !== null) {
+app/Http/Middleware/ResolveBusinessContext.php:87:                BusinessContext::set((int) $user->primary_business_id);
+app/Http/Middleware/EnsureTwoFactorIsSetup.php:31:        if (! $user->isSuperAdmin() && ! $user->isBusinessAdmin()) {
+app/Http/Middleware/EnsureTwoFactorIsSetup.php:41:        if (! $user->hasEnabledTwoFactorAuthentication()) {
+app/Http/Middleware/EnsureUserHasBusiness.php:27:        if ($user->isClient()) {
+app/Http/Middleware/EnsureUserHasBusiness.php:31:        if (! $user->primary_business_id && ! $user->isSuperAdmin()) {
+app/Events/AppointmentUpdated.php:64:                    'name' => $this->appointment->employee->user->name,
+app/Events/AppointmentCreated.php:64:                    'name' => $this->appointment->employee->user->name,
+app/Events/AppointmentCancelled.php:64:                    'name' => $this->appointment->employee->user->name,
+app/Events/EmployeeAvailabilityChanged.php:49:                'name' => $this->employee->user->name,
+app/Actions/Fortify/CreateNewUser.php:44:        $user->fill([
+app/Actions/Fortify/CreateNewUser.php:49:        $user->forceFill([
+app/Actions/Fortify/ResetUserPassword.php:24:        $user->forceFill([
+app/Services/EnrollmentService.php:58:                $user->fill([
+app/Services/EnrollmentService.php:64:                $user->forceFill([
+app/Services/EnrollmentService.php:75:                'user_id' => $user->id,
+app/Services/PayrollService.php:759:        if ($user->isSuperAdmin()) {
+app/Services/PayrollService.php:763:        if ($user->business_id !== $businessId) {
+app/Services/PayrollService.php:765:                "Cross-business operation rejected: user (business_id={$user->business_id}) cannot operate on resource (business_id={$businessId})."
+app/Services/FcmService.php:38:        if (empty($user->push_token)) {
+app/Services/FcmService.php:47:                ->toToken($user->push_token)
+app/Services/FcmService.php:57:            $user->forceFill(['push_token' => null])->save();
+app/Services/FcmService.php:58:            Log::info('FCM token invalidated and cleared', ['user_id' => $user->id]);
+app/Services/FcmService.php:63:                'user_id' => $user->id,
+app/Services/LoyaltyService.php:168:        if (! $user || ! $user->business_id) {
+app/Services/LoyaltyService.php:172:        return $this->getProgress($user->id, $user->business_id);
+app/Services/LoyaltyService.php:184:        if (! $user || ! $user->business_id) {
+app/Services/LoyaltyService.php:188:        return $this->redeemReward($user->id, $user->business_id);
+app/Models/Scopes/BelongsToBusinessScope.php:32:        if ($user->isSuperAdmin()) {
+app/Models/Scopes/BelongsToBusinessScope.php:49:        if ($user->business_id) {
+app/Models/Scopes/BelongsToBusinessScope.php:50:            $query->where($model->getTable().'.business_id', $user->business_id);
+app/Policies/CoursePolicy.php:17:        if ($user->isSuperAdmin()) {
+app/Policies/CoursePolicy.php:21:        return $user->business_id !== null;
+app/Policies/CoursePolicy.php:29:        if ($user->isSuperAdmin()) {
+app/Policies/CoursePolicy.php:33:        return $course->business_id === $user->business_id;
+app/Policies/CoursePolicy.php:41:        if ($user->isSuperAdmin()) {
+app/Policies/CoursePolicy.php:45:        if ($user->isBusinessAdmin()) {
+app/Policies/CoursePolicy.php:46:            return $user->business_id !== null;
+app/Policies/CoursePolicy.php:57:        if ($user->isSuperAdmin()) {
+app/Policies/CoursePolicy.php:61:        if ($user->isBusinessAdmin()) {
+app/Policies/CoursePolicy.php:62:            return $course->business_id === $user->business_id;
+app/Policies/CoursePolicy.php:73:        if ($user->isSuperAdmin()) {
+app/Policies/CoursePolicy.php:77:        if ($user->isBusinessAdmin()) {
+app/Policies/CoursePolicy.php:78:            return $course->business_id === $user->business_id;
+app/Policies/CoursePolicy.php:89:        if ($user->isSuperAdmin()) {
+app/Policies/CoursePolicy.php:93:        if ($user->isBusinessAdmin()) {
+app/Policies/CoursePolicy.php:94:            return $course->business_id === $user->business_id;
+app/Policies/CoursePolicy.php:105:        return $user->isSuperAdmin();
+app/Policies/EmployeePolicy.php:18:        if ($user->isSuperAdmin()) {
+app/Policies/EmployeePolicy.php:23:        return $user->business_id !== null;
+app/Policies/EmployeePolicy.php:32:        if ($user->isSuperAdmin()) {
+app/Policies/EmployeePolicy.php:37:        return $employee->business_id === $user->business_id;
+app/Policies/EmployeePolicy.php:46:        if ($user->isSuperAdmin()) {
+app/Policies/EmployeePolicy.php:51:        if ($user->isBusinessAdmin()) {
+app/Policies/EmployeePolicy.php:52:            return $user->business_id !== null;
+app/Policies/EmployeePolicy.php:64:        if ($user->isSuperAdmin()) {
+app/Policies/EmployeePolicy.php:69:        if ($user->isBusinessAdmin()) {
+app/Policies/EmployeePolicy.php:70:            return $employee->business_id === $user->business_id;
+app/Policies/EmployeePolicy.php:82:        if ($user->isSuperAdmin()) {
+app/Policies/EmployeePolicy.php:87:        if ($user->isBusinessAdmin()) {
+app/Policies/EmployeePolicy.php:88:            return $employee->business_id === $user->business_id;
+app/Policies/EmployeePolicy.php:100:        if ($user->isSuperAdmin()) {
+app/Policies/EmployeePolicy.php:104:        if ($user->isBusinessAdmin()) {
+app/Policies/EmployeePolicy.php:105:            return $employee->business_id === $user->business_id;
+app/Policies/EmployeePolicy.php:117:        return $user->isSuperAdmin();
+app/Policies/ElectronicInvoice/EcfPolicy.php:23:        return $user->isSuperAdmin()
+app/Policies/ElectronicInvoice/EcfPolicy.php:24:            || ($user->isBusinessAdmin() && $user->business_id !== null)
+app/Policies/ElectronicInvoice/EcfPolicy.php:25:            || ($user->isEmployee() && $user->business_id !== null);
+app/Policies/ElectronicInvoice/EcfPolicy.php:33:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/EcfPolicy.php:37:        if ($user->isBusinessAdmin()) {
+app/Policies/ElectronicInvoice/EcfPolicy.php:38:            return $user->business_id === $ecf->business_id;
+app/Policies/ElectronicInvoice/EcfPolicy.php:41:        if ($user->isEmployee()) {
+app/Policies/ElectronicInvoice/EcfPolicy.php:42:            return $user->business_id === $ecf->business_id;
+app/Policies/ElectronicInvoice/EcfPolicy.php:54:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Policies/ElectronicInvoice/EcfPolicy.php:62:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/EcfPolicy.php:66:        return $user->isBusinessAdmin() && $user->business_id === $ecf->business_id;
+app/Policies/ElectronicInvoice/EcfPolicy.php:74:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/EcfPolicy.php:78:        return $user->isBusinessAdmin() && $user->business_id === $ecf->business_id;
+app/Policies/ElectronicInvoice/EcfPolicy.php:86:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/EcfPolicy.php:90:        return $user->isBusinessAdmin() && $user->business_id === $ecf->business_id;
+app/Policies/ElectronicInvoice/NcfRangoPolicy.php:24:        return $user->isSuperAdmin()
+app/Policies/ElectronicInvoice/NcfRangoPolicy.php:25:            || ($user->isBusinessAdmin() && $user->business_id !== null);
+app/Policies/ElectronicInvoice/NcfRangoPolicy.php:33:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/NcfRangoPolicy.php:37:        return $user->isBusinessAdmin() && $user->business_id === $ncfRango->business_id;
+app/Policies/ElectronicInvoice/NcfRangoPolicy.php:46:        return $user->isBusinessAdmin() && $user->business_id !== null;
+app/Policies/ElectronicInvoice/NcfRangoPolicy.php:54:        return $user->isBusinessAdmin() && $user->business_id === $ncfRango->business_id;
+app/Policies/ElectronicInvoice/NcfRangoPolicy.php:62:        return $user->isBusinessAdmin() && $user->business_id === $ncfRango->business_id;
+app/Policies/ElectronicInvoice/BusinessFeConfigPolicy.php:23:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/BusinessFeConfigPolicy.php:27:        return $user->isBusinessAdmin() && $user->business_id === $config->business_id;
+app/Policies/ElectronicInvoice/BusinessFeConfigPolicy.php:36:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/BusinessFeConfigPolicy.php:40:        return $user->isBusinessAdmin() && $user->business_id === $config->business_id;
+app/Policies/ElectronicInvoice/BusinessFeConfigPolicy.php:49:        return $user->isBusinessAdmin() && $user->business_id === $config->business_id;
+app/Policies/ElectronicInvoice/EcfReceivedPolicy.php:23:        return $user->isSuperAdmin()
+app/Policies/ElectronicInvoice/EcfReceivedPolicy.php:24:            || ($user->isBusinessAdmin() && $user->business_id !== null);
+app/Policies/ElectronicInvoice/EcfReceivedPolicy.php:32:        if ($user->isSuperAdmin()) {
+app/Policies/ElectronicInvoice/EcfReceivedPolicy.php:36:        return $user->isBusinessAdmin() && $user->business_id === $received->business_id;
+app/Policies/ElectronicInvoice/EcfReceivedPolicy.php:44:        return $user->isBusinessAdmin() && $user->business_id === $received->business_id;
+app/Policies/ElectronicInvoice/EcfReceivedPolicy.php:52:        return $user->isBusinessAdmin() && $user->business_id === $received->business_id;
+app/Policies/Payroll/PayrollPeriodPolicy.php:17:        return $user->isSuperAdmin() || ($user->isBusinessAdmin() && $user->business_id !== null);
+app/Policies/Payroll/PayrollPeriodPolicy.php:25:        return $user->isSuperAdmin() || ($user->isBusinessAdmin() && $user->business_id === $period->business_id);
+app/Policies/Payroll/PayrollPeriodPolicy.php:33:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Policies/Payroll/PayrollPeriodPolicy.php:42:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/PayrollPeriodPolicy.php:46:        return $user->isBusinessAdmin()
+app/Policies/Payroll/PayrollPeriodPolicy.php:47:            && $user->business_id === $period->business_id
+app/Policies/Payroll/PayrollRecordPolicy.php:17:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/PayrollRecordPolicy.php:21:        if ($user->isBusinessAdmin()) {
+app/Policies/Payroll/PayrollRecordPolicy.php:22:            return $user->business_id === $record->business_id;
+app/Policies/Payroll/PayrollRecordPolicy.php:25:        if ($user->isEmployee()) {
+app/Policies/Payroll/PayrollRecordPolicy.php:26:            return $user->employee?->id === $record->employee_id;
+app/Policies/Payroll/PayrollRecordPolicy.php:38:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/PayrollRecordPolicy.php:42:        return $user->isBusinessAdmin() && $user->business_id === $record->business_id;
+app/Policies/Payroll/PayrollRecordPolicy.php:51:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/PayrollRecordPolicy.php:55:        return $user->isBusinessAdmin() && $user->business_id === $record->business_id;
+app/Policies/Payroll/PayrollRecordPolicy.php:64:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/PayrollRecordPolicy.php:68:        return $user->isBusinessAdmin() && $user->business_id === $record->business_id;
+app/Policies/Payroll/PayrollAdjustmentPolicy.php:16:     * Called via: $user->can('create', [PayrollAdjustment::class, $period])
+app/Policies/Payroll/PayrollAdjustmentPolicy.php:20:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/PayrollAdjustmentPolicy.php:24:        return $user->isBusinessAdmin()
+app/Policies/Payroll/PayrollAdjustmentPolicy.php:25:            && $user->business_id === $period->business_id
+app/Policies/Payroll/CommissionRulePolicy.php:23:        return $user->isSuperAdmin()
+app/Policies/Payroll/CommissionRulePolicy.php:24:            || ($user->isBusinessAdmin() && $user->business_id !== null);
+app/Policies/Payroll/CommissionRulePolicy.php:32:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/CommissionRulePolicy.php:36:        return $user->isBusinessAdmin() && $user->business_id === $rule->business_id;
+app/Policies/Payroll/CommissionRulePolicy.php:44:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Policies/Payroll/CommissionRulePolicy.php:52:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/CommissionRulePolicy.php:56:        return $user->isBusinessAdmin() && $user->business_id === $rule->business_id;
+app/Policies/Payroll/CommissionRulePolicy.php:64:        if ($user->isSuperAdmin()) {
+app/Policies/Payroll/CommissionRulePolicy.php:68:        return $user->isBusinessAdmin() && $user->business_id === $rule->business_id;
+app/Policies/PromotionPolicy.php:17:        if ($user->isSuperAdmin()) {
+app/Policies/PromotionPolicy.php:21:        return $user->business_id !== null;
+app/Policies/PromotionPolicy.php:29:        if ($user->isSuperAdmin()) {
+app/Policies/PromotionPolicy.php:33:        return $promotion->business_id === $user->business_id;
+app/Policies/PromotionPolicy.php:41:        if ($user->isSuperAdmin()) {
+app/Policies/PromotionPolicy.php:45:        if ($user->isBusinessAdmin()) {
+app/Policies/PromotionPolicy.php:46:            return $user->business_id !== null;
+app/Policies/PromotionPolicy.php:57:        if ($user->isSuperAdmin()) {
+app/Policies/PromotionPolicy.php:61:        if ($user->isBusinessAdmin()) {
+app/Policies/PromotionPolicy.php:62:            return $promotion->business_id === $user->business_id;
+app/Policies/PromotionPolicy.php:73:        if ($user->isSuperAdmin()) {
+app/Policies/PromotionPolicy.php:77:        if ($user->isBusinessAdmin()) {
+app/Policies/PromotionPolicy.php:78:            return $promotion->business_id === $user->business_id;
+app/Policies/ServicePolicy.php:18:        if ($user->isSuperAdmin()) {
+app/Policies/ServicePolicy.php:23:        return $user->business_id !== null;
+app/Policies/ServicePolicy.php:32:        if ($user->isSuperAdmin()) {
+app/Policies/ServicePolicy.php:37:        return $service->business_id === $user->business_id;
+app/Policies/ServicePolicy.php:46:        if ($user->isSuperAdmin()) {
+app/Policies/ServicePolicy.php:51:        if ($user->isBusinessAdmin()) {
+app/Policies/ServicePolicy.php:52:            return $user->business_id !== null;
+app/Policies/ServicePolicy.php:64:        if ($user->isSuperAdmin()) {
+app/Policies/ServicePolicy.php:69:        if ($user->isBusinessAdmin()) {
+app/Policies/ServicePolicy.php:70:            return $service->business_id === $user->business_id;
+app/Policies/ServicePolicy.php:82:        if ($user->isSuperAdmin()) {
+app/Policies/ServicePolicy.php:87:        if ($user->isBusinessAdmin()) {
+app/Policies/ServicePolicy.php:88:            return $service->business_id === $user->business_id;
+app/Policies/ServicePolicy.php:100:        if ($user->isSuperAdmin()) {
+app/Policies/ServicePolicy.php:104:        if ($user->isBusinessAdmin()) {
+app/Policies/ServicePolicy.php:105:            return $service->business_id === $user->business_id;
+app/Policies/ServicePolicy.php:117:        return $user->isSuperAdmin();
+app/Policies/UserPolicy.php:16:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Policies/UserPolicy.php:25:        if ($user->isSuperAdmin()) {
+app/Policies/UserPolicy.php:30:        if ($user->isBusinessAdmin() || $user->isEmployee()) {
+app/Policies/UserPolicy.php:31:            return $user->business_id !== null;
+app/Policies/UserPolicy.php:43:        if ($user->isSuperAdmin()) {
+app/Policies/UserPolicy.php:48:        if ($client->id === $user->id) {
+app/Policies/UserPolicy.php:53:        if ($user->isBusinessAdmin() || $user->isEmployee()) {
+app/Policies/UserPolicy.php:54:            return $client->business_id === $user->business_id;
+app/Policies/UserPolicy.php:66:        if ($user->isSuperAdmin()) {
+app/Policies/UserPolicy.php:71:        if ($user->isBusinessAdmin()) {
+app/Policies/UserPolicy.php:72:            return $user->business_id !== null;
+app/Policies/UserPolicy.php:84:        if ($user->isSuperAdmin()) {
+app/Policies/UserPolicy.php:89:        if ($client->id === $user->id) {
+app/Policies/UserPolicy.php:94:        if ($user->isBusinessAdmin()) {
+app/Policies/UserPolicy.php:95:            return $client->business_id === $user->business_id;
+app/Policies/UserPolicy.php:107:        if ($user->isSuperAdmin()) {
+app/Policies/UserPolicy.php:112:        if ($user->isBusinessAdmin()) {
+app/Policies/UserPolicy.php:113:            return $client->business_id === $user->business_id;
+app/Policies/BusinessPolicy.php:18:        return $user->isSuperAdmin();
+app/Policies/BusinessPolicy.php:27:        if ($user->isSuperAdmin()) {
+app/Policies/BusinessPolicy.php:32:        return $business->id === $user->business_id;
+app/Policies/BusinessPolicy.php:41:        return $user->isSuperAdmin();
+app/Policies/BusinessPolicy.php:50:        if ($user->isSuperAdmin()) {
+app/Policies/BusinessPolicy.php:55:        if ($user->isBusinessAdmin()) {
+app/Policies/BusinessPolicy.php:56:            return $business->id === $user->business_id;
+app/Policies/BusinessPolicy.php:68:        return $user->isSuperAdmin();
+app/Policies/BusinessPolicy.php:77:        return $user->isSuperAdmin();
+app/Policies/BusinessPolicy.php:86:        return $user->isSuperAdmin();
+app/Policies/AppointmentPolicy.php:19:        if ($user->isSuperAdmin()) {
+app/Policies/AppointmentPolicy.php:24:        if ($user->isBusinessAdmin() || $user->isEmployee()) {
+app/Policies/AppointmentPolicy.php:25:            return $user->business_id !== null;
+app/Policies/AppointmentPolicy.php:29:        if ($user->isClient()) {
+app/Policies/AppointmentPolicy.php:30:            return $user->business_id !== null;
+app/Policies/AppointmentPolicy.php:42:        if ($user->isSuperAdmin()) {
+app/Policies/AppointmentPolicy.php:47:        if ($user->isBusinessAdmin()) {
+app/Policies/AppointmentPolicy.php:48:            return $appointment->business_id === $user->business_id;
+app/Policies/AppointmentPolicy.php:52:        if ($user->isEmployee()) {
+app/Policies/AppointmentPolicy.php:53:            return $appointment->business_id === $user->business_id
+app/Policies/AppointmentPolicy.php:54:                && $appointment->employee_id === $user->employee?->id;
+app/Policies/AppointmentPolicy.php:58:        if ($user->isClient()) {
+app/Policies/AppointmentPolicy.php:59:            return $appointment->client_id === $user->id
+app/Policies/AppointmentPolicy.php:60:                && $appointment->business_id === $user->business_id;
+app/Policies/AppointmentPolicy.php:72:     * client access falls back to checking user->business_id is set.
+app/Policies/AppointmentPolicy.php:76:        if ($user->isSuperAdmin()) {
+app/Policies/AppointmentPolicy.php:80:        if ($user->isBusinessAdmin()) {
+app/Policies/AppointmentPolicy.php:82:                return $user->business_id === $business->id;
+app/Policies/AppointmentPolicy.php:86:            return $user->business_id !== null;
+app/Policies/AppointmentPolicy.php:89:        if ($user->isEmployee()) {
+app/Policies/AppointmentPolicy.php:91:                return $user->business_id === $business->id;
+app/Policies/AppointmentPolicy.php:98:        if ($user->isClient()) {
+app/Policies/AppointmentPolicy.php:100:                return $user->canBookIn($business);
+app/Policies/AppointmentPolicy.php:104:            return $user->business_id !== null;
+app/Policies/AppointmentPolicy.php:116:        if ($user->isSuperAdmin()) {
+app/Policies/AppointmentPolicy.php:121:        if ($user->isBusinessAdmin()) {
+app/Policies/AppointmentPolicy.php:122:            return $appointment->business_id === $user->business_id;
+app/Policies/AppointmentPolicy.php:135:        if ($user->isSuperAdmin()) {
+app/Policies/AppointmentPolicy.php:140:        if ($user->isBusinessAdmin()) {
+app/Policies/AppointmentPolicy.php:141:            return $appointment->business_id === $user->business_id;
+app/Policies/AppointmentPolicy.php:145:        if ($user->isClient()) {
+app/Policies/AppointmentPolicy.php:146:            return $appointment->client_id === $user->id
+app/Policies/AppointmentPolicy.php:147:                && $appointment->business_id === $user->business_id
+app/Policies/AppointmentPolicy.php:161:        if ($user->isSuperAdmin()) {
+app/Policies/AppointmentPolicy.php:165:        if ($user->isBusinessAdmin()) {
+app/Policies/AppointmentPolicy.php:166:            return $appointment->business_id === $user->business_id;
+app/Policies/AppointmentPolicy.php:178:        return $user->isSuperAdmin();
+app/Policies/QrCodePolicy.php:17:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Policies/QrCodePolicy.php:25:        if ($user->isSuperAdmin()) {
+app/Policies/QrCodePolicy.php:29:        return $user->isBusinessAdmin() && $qrCode->business_id === $user->business_id;
+app/Policies/QrCodePolicy.php:37:        return $user->isSuperAdmin() || $user->isBusinessAdmin();
+app/Policies/QrCodePolicy.php:45:        if ($user->isSuperAdmin()) {
+app/Policies/QrCodePolicy.php:49:        return $user->isBusinessAdmin() && $qrCode->business_id === $user->business_id;
+app/Policies/Pos/PosTicketPolicy.php:23:        return $user->isSuperAdmin()
+app/Policies/Pos/PosTicketPolicy.php:24:            || ($user->isBusinessAdmin() && $user->business_id !== null)
+app/Policies/Pos/PosTicketPolicy.php:25:            || ($user->isEmployee() && $user->business_id !== null);
+app/Policies/Pos/PosTicketPolicy.php:33:        if ($user->isSuperAdmin()) {
+app/Policies/Pos/PosTicketPolicy.php:37:        if ($user->isBusinessAdmin() || $user->isEmployee()) {
+app/Policies/Pos/PosTicketPolicy.php:38:            return $user->business_id === $ticket->business_id;
+app/Policies/Pos/PosTicketPolicy.php:50:        return $user->isSuperAdmin()
+app/Policies/Pos/PosTicketPolicy.php:51:            || $user->isBusinessAdmin()
+app/Policies/Pos/PosTicketPolicy.php:52:            || $user->isEmployee();
+app/Policies/Pos/PosTicketPolicy.php:61:        if ($user->isSuperAdmin()) {
+app/Policies/Pos/PosTicketPolicy.php:65:        return $user->isBusinessAdmin() && $user->business_id === $ticket->business_id;
+app/Policies/Pos/PosTicketPolicy.php:73:        if ($user->isSuperAdmin()) {
+app/Policies/Pos/PosTicketPolicy.php:77:        return $user->isBusinessAdmin() && $user->business_id === $ticket->business_id;
+app/Policies/Pos/PosShiftPolicy.php:23:        if ($user->isSuperAdmin()) {
+app/Policies/Pos/PosShiftPolicy.php:27:        if ($user->isBusinessAdmin()) {
+app/Policies/Pos/PosShiftPolicy.php:28:            return $user->business_id === $shift->business_id;
+app/Policies/Pos/PosShiftPolicy.php:31:        if ($user->isEmployee()) {
+app/Policies/Pos/PosShiftPolicy.php:33:            return $user->business_id === $shift->business_id
+app/Policies/Pos/PosShiftPolicy.php:34:                && $user->id === $shift->cashier_id;
+app/Policies/Pos/PosShiftPolicy.php:46:        return $user->isSuperAdmin()
+app/Policies/Pos/PosShiftPolicy.php:47:            || $user->isBusinessAdmin()
+app/Policies/Pos/PosShiftPolicy.php:48:            || $user->isEmployee();
+app/Policies/Pos/PosShiftPolicy.php:57:        if ($user->isSuperAdmin()) {
+app/Policies/Pos/PosShiftPolicy.php:61:        if ($user->isBusinessAdmin()) {
+app/Policies/Pos/PosShiftPolicy.php:62:            return $user->business_id === $shift->business_id;
+app/Policies/Pos/PosShiftPolicy.php:65:        if ($user->isEmployee()) {
+app/Policies/Pos/PosShiftPolicy.php:66:            return $user->business_id === $shift->business_id
+app/Policies/Pos/PosShiftPolicy.php:67:                && $user->id === $shift->cashier_id;
+app/Policies/ServiceCategoryPolicy.php:17:        if ($user->isSuperAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:21:        return $user->business_id !== null;
+app/Policies/ServiceCategoryPolicy.php:29:        if ($user->isSuperAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:33:        return $serviceCategory->business_id === $user->business_id;
+app/Policies/ServiceCategoryPolicy.php:41:        if ($user->isSuperAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:45:        if ($user->isBusinessAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:46:            return $user->business_id !== null;
+app/Policies/ServiceCategoryPolicy.php:57:        if ($user->isSuperAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:61:        if ($user->isBusinessAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:62:            return $serviceCategory->business_id === $user->business_id;
+app/Policies/ServiceCategoryPolicy.php:73:        if ($user->isSuperAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:77:        if ($user->isBusinessAdmin()) {
+app/Policies/ServiceCategoryPolicy.php:78:            return $serviceCategory->business_id === $user->business_id;

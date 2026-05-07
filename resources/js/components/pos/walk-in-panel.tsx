@@ -36,6 +36,10 @@ interface WalkInPanelProps {
     services: ServiceForWalkIn[];
     products: ProductForWalkIn[];
     categories: ServiceCategoryItem[];
+    /** Lifted state: controlled item list from parent. */
+    items: WalkInItem[];
+    /** Lifted state: notify parent of item changes. */
+    onItemsChange: (items: WalkInItem[]) => void;
     onOpenCheckout: (items: WalkInItem[]) => void;
     isLoadingCatalog: boolean;
 }
@@ -48,12 +52,18 @@ export function WalkInPanel({
     services,
     products,
     categories,
+    items,
+    onItemsChange,
     onOpenCheckout,
     isLoadingCatalog,
 }: WalkInPanelProps) {
     const [selectedCategory, setSelectedCategory] = useState<number | null | 'products'>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [items, setItems] = useState<WalkInItem[]>([]);
+
+    const setItems = (updater: WalkInItem[] | ((prev: WalkInItem[]) => WalkInItem[])) => {
+        const next = typeof updater === 'function' ? updater(items) : updater;
+        onItemsChange(next);
+    };
 
     const filteredItems = useMemo(() => {
         const query = searchQuery.toLowerCase();

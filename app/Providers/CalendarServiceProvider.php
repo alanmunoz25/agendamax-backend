@@ -15,7 +15,7 @@ class CalendarServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(GoogleClient::class, function ($app) {
-            $client = new GoogleClient();
+            $client = new GoogleClient;
             $client->setClientId(config('services.google.client_id'));
             $client->setClientSecret(config('services.google.client_secret'));
             $client->setRedirectUri(config('services.google.redirect'));

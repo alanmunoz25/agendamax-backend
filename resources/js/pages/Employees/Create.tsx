@@ -24,6 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/input-error';
 import type { Service, User } from '@/types/models';
 import { UserPlus, Briefcase } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     availableUsers: Pick<User, 'id' | 'name' | 'email' | 'role'>[];
@@ -31,6 +32,8 @@ interface Props {
 }
 
 export default function CreateEmployee({ availableUsers, services }: Props) {
+    const { t } = useTranslation();
+
     const { data, setData, post, processing, errors, isDirty } = useForm({
         user_id: '',
         photo_url: '',
@@ -56,7 +59,7 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
     // Group services by category
     const servicesByCategory = services.reduce(
         (acc, service) => {
-            const category = service.category || 'Uncategorized';
+            const category = service.category || t('common.uncategorized');
             if (!acc[category]) {
                 acc[category] = [];
             }
@@ -68,21 +71,21 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
 
     return (
         <AppLayout
-            title="Create Employee"
+            title={t('employees.create_title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Employees', href: '/employees' },
-                { label: 'Create' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.employees'), href: '/employees' },
+                { label: t('breadcrumbs.create') },
             ]}
         >
             <div className="mx-auto max-w-2xl space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        Add Employee
+                        {t('employees.create_title')}
                     </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Create a new employee profile for a user in your business
+                        {t('employees.create_subtitle')}
                     </p>
                 </div>
 
@@ -92,16 +95,16 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <UserPlus className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Employee Information</CardTitle>
+                                <CardTitle>{t('employees.info_card_title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Select a user and provide employee details
+                                {t('employees.info_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="user_id" required>
-                                    User Account
+                                    {t('employees.user_account_label')}
                                 </Label>
                                 <Select
                                     value={data.user_id}
@@ -110,7 +113,7 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                                     }
                                 >
                                     <SelectTrigger id="user_id">
-                                        <SelectValue placeholder="Select a user" />
+                                        <SelectValue placeholder={t('employees.user_placeholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableUsers.map((user) => (
@@ -130,12 +133,12 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                                 </Select>
                                 <InputError message={errors.user_id} />
                                 <p className="text-xs text-muted-foreground">
-                                    Only users without employee profiles are shown
+                                    {t('employees.user_hint')}
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="photo_url">Photo URL</Label>
+                                <Label htmlFor="photo_url">{t('employees.photo_label')}</Label>
                                 <Input
                                     id="photo_url"
                                     type="url"
@@ -147,23 +150,22 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                                 />
                                 <InputError message={errors.photo_url} />
                                 <p className="text-xs text-muted-foreground">
-                                    Optional URL to employee photo
+                                    {t('employees.photo_hint')}
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="bio">Bio</Label>
+                                <Label htmlFor="bio">{t('employees.bio_label')}</Label>
                                 <Textarea
                                     id="bio"
                                     value={data.bio}
                                     onChange={(e) => setData('bio', e.target.value)}
-                                    placeholder="Brief bio or description..."
+                                    placeholder={t('employees.bio_placeholder')}
                                     rows={3}
                                 />
                                 <InputError message={errors.bio} />
                                 <p className="text-xs text-muted-foreground">
-                                    Optional description of the employee's
-                                    expertise
+                                    {t('employees.bio_hint')}
                                 </p>
                             </div>
                         </CardContent>
@@ -174,10 +176,10 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Briefcase className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle>Service Assignment</CardTitle>
+                                <CardTitle>{t('employees.service_assignment_title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Select which services this employee can provide
+                                {t('employees.service_assignment_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -219,8 +221,7 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                                 )
                             ) : (
                                 <p className="text-sm text-muted-foreground">
-                                    No active services available. Create services
-                                    first before assigning them to employees.
+                                    {t('employees.no_services_available')}
                                 </p>
                             )}
                             <InputError message={errors.service_ids} />
@@ -230,18 +231,17 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                     {/* Availability */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Availability</CardTitle>
+                            <CardTitle>{t('employees.availability_card_title')}</CardTitle>
                             <CardDescription>
-                                Control whether this employee is active
+                                {t('employees.availability_card_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                    <Label htmlFor="is_active">Active Status</Label>
+                                    <Label htmlFor="is_active">{t('employees.active_status_label')}</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        Only active employees can be scheduled for
-                                        appointments
+                                        {t('employees.active_status_hint')}
                                     </p>
                                 </div>
                                 <Switch
@@ -264,10 +264,10 @@ export default function CreateEmployee({ availableUsers, services }: Props) {
                             onClick={() => window.history.back()}
                             disabled={processing}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={processing || !isDirty}>
-                            {processing ? 'Creating...' : 'Create Employee'}
+                            {processing ? t('common.creating') : t('employees.create_title')}
                         </Button>
                     </div>
                 </form>

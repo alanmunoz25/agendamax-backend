@@ -29,6 +29,8 @@ import {
     ChevronDown,
     ChevronRight,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
 
 interface Filters {
     search?: string;
@@ -41,6 +43,7 @@ interface Props {
 }
 
 export default function ServiceCategoriesIndex({ categories, filters }: Props) {
+    const { t } = useTranslation();
     const { errors } = usePage().props as { errors: Record<string, string> };
     const [deleteCategory, setDeleteCategory] = useState<ServiceCategory | null>(null);
     const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
@@ -108,24 +111,24 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
 
     return (
         <AppLayout
-            title="Categories"
+            title={t('categories.title')}
             breadcrumbs={[
-                { title: 'Dashboard', href: '/dashboard' },
-                { title: 'Categories', href: '/service-categories' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.categories'), href: '/service-categories' },
             ]}
         >
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Categories</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('categories.title')}</h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Manage your service categories and subcategories
+                            {t('categories.subtitle')}
                         </p>
                     </div>
                     <Button onClick={() => router.visit('/service-categories/create')}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Category
+                        {t('categories.add_category')}
                     </Button>
                 </div>
 
@@ -141,7 +144,7 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            placeholder="Search categories..."
+                            placeholder={t('categories.search_placeholder')}
                             value={filters.search || ''}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="pl-9"
@@ -150,19 +153,19 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
 
                     <Select value={filters.is_active || 'all'} onValueChange={handleStatusFilter}>
                         <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="All Status" />
+                            <SelectValue placeholder={t('categories.all_status')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="1">Active</SelectItem>
-                            <SelectItem value="0">Inactive</SelectItem>
+                            <SelectItem value="all">{t('categories.all_status')}</SelectItem>
+                            <SelectItem value="1">{t('common.active')}</SelectItem>
+                            <SelectItem value="0">{t('common.inactive')}</SelectItem>
                         </SelectContent>
                     </Select>
 
                     {hasActiveFilters && (
                         <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full sm:w-auto">
                             <X className="mr-2 h-4 w-4" />
-                            Clear
+                            {t('common.clear_filters')}
                         </Button>
                     )}
                 </div>
@@ -199,11 +202,11 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <span>{getTotalServices(category)} services</span>
+                                                <span>{t('categories.services_count', { count: getTotalServices(category) })}</span>
                                                 {(category.children_count ?? 0) > 0 && (
                                                     <>
                                                         <span className="text-border">|</span>
-                                                        <span>{category.children_count} subcategories</span>
+                                                        <span>{t('categories.subcategories_count', { count: category.children_count })}</span>
                                                     </>
                                                 )}
                                             </div>
@@ -214,7 +217,7 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                                                         : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                                 }`}
                                             >
-                                                {category.is_active ? 'Active' : 'Inactive'}
+                                                {category.is_active ? t('common.active') : t('common.inactive')}
                                             </span>
                                             <div className="flex items-center gap-1">
                                                 <Button
@@ -255,7 +258,7 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                                                     </div>
                                                     <div className="flex items-center gap-3">
                                                         <span className="text-xs text-muted-foreground">
-                                                            {child.services_count ?? 0} services
+                                                            {t('categories.services_count', { count: child.services_count ?? 0 })}
                                                         </span>
                                                         <span
                                                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -264,7 +267,7 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                                                                     : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                                             }`}
                                                         >
-                                                            {child.is_active ? 'Active' : 'Inactive'}
+                                                            {child.is_active ? t('common.active') : t('common.inactive')}
                                                         </span>
                                                         <div className="flex items-center gap-1">
                                                             <Button
@@ -297,7 +300,7 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                         {categories.last_page > 1 && (
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">
-                                    Showing {categories.from} to {categories.to} of {categories.total} categories
+                                    {t('categories.showing_range', { from: categories.from, to: categories.to, total: categories.total })}
                                 </p>
                                 <div className="flex gap-2">
                                     {Array.from({ length: categories.last_page }, (_, i) => i + 1).map((page) => (
@@ -323,16 +326,16 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                 ) : (
                     <EmptyState
                         icon={FolderTree}
-                        title="No categories found"
+                        title={hasActiveFilters ? t('categories.empty_title_filtered') : t('categories.empty_title')}
                         description={
                             hasActiveFilters
-                                ? 'No categories match your current filters. Try adjusting your search criteria.'
-                                : "You haven't created any categories yet. Get started by adding your first category."
+                                ? t('categories.empty_description_filtered')
+                                : t('categories.empty_description')
                         }
                         action={
                             !hasActiveFilters
                                 ? {
-                                      label: 'Add Category',
+                                      label: t('categories.add_category'),
                                       onClick: () => router.visit('/service-categories/create'),
                                   }
                                 : undefined
@@ -348,9 +351,14 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                         open={true}
                         onOpenChange={(open) => { if (!open) setDeleteCategory(null); }}
                         onConfirm={handleDelete}
-                        title="Delete Category"
-                        description={`Are you sure you want to delete "${deleteCategory.name}"?${(deleteCategory.children_count ?? 0) > 0 ? ` This will also delete ${deleteCategory.children_count} subcategories.` : ''} This action cannot be undone.`}
-                        confirmLabel="Delete"
+                        title={t('categories.delete_title')}
+                        description={t('categories.delete_description', {
+                            name: deleteCategory.name,
+                            children_note: (deleteCategory.children_count ?? 0) > 0
+                                ? t('categories.delete_description_children_note', { count: deleteCategory.children_count })
+                                : '',
+                        })}
+                        confirmLabel={t('common.delete')}
                         variant="destructive"
                     />
                 ) : (
@@ -358,16 +366,13 @@ export default function ServiceCategoriesIndex({ categories, filters }: Props) {
                         open={true}
                         onOpenChange={(open) => { if (!open) setDeleteCategory(null); }}
                         onConfirm={() => setDeleteCategory(null)}
-                        title="Cannot Delete Category"
+                        title={t('categories.cannot_delete_title')}
                         description={
                             <div className="space-y-2">
-                                <p>
-                                    This category has <strong>{getTotalServices(deleteCategory)} service(s)</strong> assigned.
-                                </p>
-                                <p>Please reassign or delete those services before removing this category.</p>
+                                <p>{t('categories.cannot_delete_desc', { count: getTotalServices(deleteCategory) })}</p>
                             </div>
                         }
-                        confirmLabel="Close"
+                        confirmLabel={t('common.close')}
                         variant="default"
                     />
                 )

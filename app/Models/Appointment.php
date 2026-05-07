@@ -92,6 +92,15 @@ class Appointment extends Model
     }
 
     /**
+     * Get the individual service lines for this appointment as a HasMany.
+     * Allows eager loading of service + employee per line without pivot gymnastics.
+     */
+    public function appointmentServices(): HasMany
+    {
+        return $this->hasMany(AppointmentService::class);
+    }
+
+    /**
      * Get the visit associated with this appointment.
      */
     public function visit(): HasOne

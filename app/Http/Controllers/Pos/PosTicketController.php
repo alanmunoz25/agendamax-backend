@@ -12,6 +12,7 @@ use App\Http\Requests\Pos\VoidPosTicketRequest;
 use App\Models\PosTicket;
 use App\Services\PosService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,12 +23,26 @@ class PosTicketController extends Controller
         private readonly PosService $posService
     ) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $filters = request()->only(['search', 'method', 'ecf_status', 'date']);
+        $user = $request->user();
 
-        $tickets = PosTicket::query()
-            ->with(['employee.user', 'payments'])
+        // super_admin must explicitly supply business_id to avoid leaking data across all tenants.
+        $businessId = $user->isSuperAdmin()
+            ? (int) $request->query('business_id', 0)
+            : $user->business_id;
+
+        abort_unless(
+            $businessId > 0,
+            422,
+            'super_admin debe especificar business_id para acceder a los tickets.'
+        );
+
+        $filters = $request->only(['search', 'method', 'ecf_status', 'date']);
+
+        $tickets = PosTicket::withoutGlobalScopes()
+            ->where('business_id', $businessId)
+            ->with(['employee.user', 'payments', 'items.employee.user'])
             ->when($filters['search'] ?? null, function ($q, $search): void {
                 $q->where(function ($inner) use ($search): void {
                     $inner->where('ticket_number', 'like', "%{$search}%")
@@ -43,8 +58,24 @@ class PosTicketController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        // Derive the unique list of collaborating employees per ticket from line items,
+        // so the tickets list can show all employees who worked on a multi-service ticket.
+        $ticketsData = $tickets->through(function (PosTicket $ticket): array {
+            $employees = $ticket->items
+                ->filter(fn ($item) => $item->employee !== null)
+                ->map(fn ($item) => [
+                    'id' => $item->employee->id,
+                    'name' => $item->employee->user->name,
+                ])
+                ->unique('id')
+                ->values()
+                ->all();
+
+            return array_merge($ticket->toArray(), ['employees' => $employees]);
+        });
+
         return Inertia::render('Pos/Tickets/Index', [
-            'tickets' => $tickets,
+            'tickets' => $ticketsData,
             'filters' => $filters,
         ]);
     }

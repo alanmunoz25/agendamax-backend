@@ -99,24 +99,30 @@ class PayrollPeriodController extends Controller
         // Eager load commissions, tips, adjustments per record (keyed by employee_id)
         $employeeIds = $records->pluck('employee_id')->unique()->all();
 
-        $commissionsByEmployee = CommissionRecord::withoutGlobalScopes()
-            ->where('payroll_period_id', $period->id)
-            ->whereIn('employee_id', $employeeIds)
-            ->with(['appointment', 'service'])
-            ->get()
-            ->groupBy('employee_id');
+        $commissionsByEmployee = ! empty($employeeIds)
+            ? CommissionRecord::withoutGlobalScopes()
+                ->where('payroll_period_id', $period->id)
+                ->whereIn('employee_id', $employeeIds)
+                ->with(['appointment', 'service'])
+                ->get()
+                ->groupBy('employee_id')
+            : collect();
 
-        $tipsByEmployee = Tip::withoutGlobalScopes()
-            ->where('payroll_period_id', $period->id)
-            ->whereIn('employee_id', $employeeIds)
-            ->get()
-            ->groupBy('employee_id');
+        $tipsByEmployee = ! empty($employeeIds)
+            ? Tip::withoutGlobalScopes()
+                ->where('payroll_period_id', $period->id)
+                ->whereIn('employee_id', $employeeIds)
+                ->get()
+                ->groupBy('employee_id')
+            : collect();
 
-        $adjustmentsByEmployee = PayrollAdjustment::withoutGlobalScopes()
-            ->where('payroll_period_id', $period->id)
-            ->whereIn('employee_id', $employeeIds)
-            ->get()
-            ->groupBy('employee_id');
+        $adjustmentsByEmployee = ! empty($employeeIds)
+            ? PayrollAdjustment::withoutGlobalScopes()
+                ->where('payroll_period_id', $period->id)
+                ->whereIn('employee_id', $employeeIds)
+                ->get()
+                ->groupBy('employee_id')
+            : collect();
 
         $enrichedRecords = $records->map(function (PayrollRecord $record) use ($commissionsByEmployee, $tipsByEmployee, $adjustmentsByEmployee) {
             return array_merge($record->toArray(), [
@@ -125,6 +131,14 @@ class PayrollPeriodController extends Controller
                 'adjustments' => ($adjustmentsByEmployee[$record->employee_id] ?? collect())->values()->toArray(),
             ]);
         });
+
+        // CommissionRecords already assigned to this period but whose employees have no PayrollRecord yet.
+        // This happens when auto-payroll ran but no manual "Generate Records" step has been done yet.
+        // Exposing these allows the UI to show a warning and surface pending commissions.
+        $pendingCommissionsCount = CommissionRecord::withoutGlobalScopes()
+            ->where('payroll_period_id', $period->id)
+            ->whereNotIn('employee_id', $employeeIds)
+            ->count();
 
         // Find the next open period after this one (for void-from-paid compensation)
         $nextOpenPeriod = PayrollPeriod::withoutGlobalScopes()
@@ -145,8 +159,13 @@ class PayrollPeriodController extends Controller
 
         $allDraft = $records->isNotEmpty() && $records->every(fn ($r) => $r->status === 'draft');
 
+        // Allow generating records if: period is open AND either no records exist OR there are
+        // pending commissions that were auto-assigned but records haven't been generated yet.
+        $canGenerate = $period->status === 'open'
+            && ($records->isEmpty() || $pendingCommissionsCount > 0);
+
         $can = [
-            'generate' => $period->status === 'open' && $records->isEmpty(),
+            'generate' => $canGenerate,
             'approve_all' => $period->status === 'open' && $allDraft,
             'add_adjustment' => $period->status === 'open',
         ];
@@ -160,6 +179,7 @@ class PayrollPeriodController extends Controller
             'employees' => $employees,
             'period_summary' => $periodSummary,
             'can' => $can,
+            'pending_commissions_count' => $pendingCommissionsCount,
         ]);
     }
 

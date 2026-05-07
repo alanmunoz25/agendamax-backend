@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BusinessDiscoveryResource;
+use App\Http\Resources\BusinessPublicResource;
 use App\Http\Resources\BusinessResource;
 use App\Http\Resources\EmployeeResource;
 use App\Models\Business;
@@ -15,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class BusinessController extends Controller
 {
@@ -41,6 +44,130 @@ class BusinessController extends Controller
             ->get();
 
         return BusinessResource::collection($businesses);
+    }
+
+    /**
+     * Discover businesses with optional filters: text search, sector, province, geo radius, service.
+     *
+     * Accepts both ?q= and ?search= for the text search parameter.
+     * ?q= takes precedence when both are present (legacy compatibility).
+     * Mobile app sends ?search=; web/admin may use ?q=.
+     */
+    public function discover(Request $request): AnonymousResourceCollection
+    {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'min:2', 'max:100'],
+            'search' => ['nullable', 'string', 'min:2', 'max:100'],
+            'sector' => ['nullable', 'string', 'max:80'],
+            'province' => ['nullable', 'string', 'max:80'],
+            'lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'lng' => ['nullable', 'numeric', 'between:-180,180', 'required_with:lat'],
+            'radius_km' => ['nullable', 'numeric', 'between:0.5,500'],
+            'service_id' => ['nullable', 'integer', 'exists:services,id'],
+            'page' => ['nullable', 'integer'],
+        ]);
+
+        // Resolve text search term: ?q= takes precedence over ?search=
+        // Both params are accepted; mobile app sends ?search=, web/admin may send ?q=
+        $searchTerm = $validated['q'] ?? $validated['search'] ?? null;
+
+        $query = Business::where('status', 'active')
+            ->withCount(['services', 'employees']);
+
+        if (! empty($searchTerm)) {
+            // MATCH...AGAINST requires MySQL with a FULLTEXT index; fall back to LIKE
+            // for non-MySQL environments (e.g. SQLite in tests).
+            if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+                $query->whereRaw('MATCH(name, description) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchTerm]);
+            } else {
+                $query->where(function ($q) use ($searchTerm): void {
+                    $q->where('name', 'LIKE', "%{$searchTerm}%")
+                        ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+                });
+            }
+        }
+
+        if (! empty($validated['sector'])) {
+            $query->where('sector', $validated['sector']);
+        }
+
+        if (! empty($validated['province'])) {
+            $query->where('province', $validated['province']);
+        }
+
+        if (! empty($validated['service_id'])) {
+            $serviceId = (int) $validated['service_id'];
+            $query->whereHas('services', fn ($q) => $q->where('services.id', $serviceId));
+        }
+
+        $lat = isset($validated['lat']) && $validated['lat'] !== null ? (float) $validated['lat'] : null;
+        $lng = isset($validated['lng']) && $validated['lng'] !== null ? (float) $validated['lng'] : null;
+
+        if ($lat !== null && $lng !== null) {
+            $radiusKm = isset($validated['radius_km']) && $validated['radius_km'] !== null
+                ? (float) $validated['radius_km']
+                : 25.0;
+
+            // Bounding box pre-filter to leverage indexed lat/lng columns.
+            $latDelta = $radiusKm / 111.32;
+            $lngDelta = $radiusKm / (111.32 * cos(deg2rad($lat)));
+
+            $query->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
+                ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta]);
+
+            // Select precise great-circle distance using ST_Distance_Sphere.
+            $query->selectRaw(
+                'businesses.*, ST_Distance_Sphere(location, ST_GeomFromText(CONCAT(\'POINT(\', ?, \' \', ?, \')\'), 4326)) / 1000 as distance_km',
+                [$lng, $lat]
+            )->orderBy('distance_km', 'asc');
+        } else {
+            $query->orderBy('name', 'asc');
+        }
+
+        $businesses = $query->paginate(min($request->integer('per_page', 15), 50));
+
+        return BusinessDiscoveryResource::collection($businesses);
+    }
+
+    /**
+     * Get full public profile of a business by numeric ID (route model binding).
+     */
+    public function show(Business $business): BusinessPublicResource
+    {
+        if ($business->status !== 'active') {
+            abort(404);
+        }
+
+        return $this->buildPublicResource($business);
+    }
+
+    /**
+     * Get full public profile of a business by slug.
+     */
+    public function showBySlug(Business $business): BusinessPublicResource
+    {
+        if ($business->status !== 'active') {
+            abort(404);
+        }
+
+        return $this->buildPublicResource($business);
+    }
+
+    /**
+     * Eager-load relations and counts, then return a BusinessPublicResource.
+     * Shared by show() (numeric ID) and showBySlug().
+     */
+    private function buildPublicResource(Business $business): BusinessPublicResource
+    {
+        $business->load([
+            'services' => fn ($q) => $q->where('is_active', true),
+            'serviceCategories',
+            'employees' => fn ($q) => $q->where('is_active', true)->with('user:id,name'),
+        ]);
+
+        $business->loadCount(['services', 'employees']);
+
+        return new BusinessPublicResource($business);
     }
 
     /**

@@ -41,7 +41,7 @@ class LeadControllerTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'lead@example.com',
-            'business_id' => $this->business->id,
+            'primary_business_id' => $this->business->id,
             'role' => 'lead',
         ]);
     }

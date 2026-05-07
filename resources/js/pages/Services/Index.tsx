@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ConfirmationModal } from '@/components/confirmation-modal';
 import type { Service, ServiceCategory, PaginatedResponse } from '@/types/models';
 import { Briefcase, Plus, Pencil, Trash2, Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Filters {
     search?: string;
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export default function ServicesIndex({ services, serviceCategories, filters }: Props) {
+    const { t } = useTranslation();
     const [deleteService, setDeleteService] = useState<Service | null>(null);
 
     const handleSearch = (value: string) => {
@@ -88,7 +90,7 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
     const getCategoryDisplay = (service: Service) => {
         const sc = service.service_category;
         if (!sc) {
-            return service.category || 'Uncategorized';
+            return service.category || t('common.uncategorized');
         }
         if (sc.parent) {
             return `${sc.parent.name} / ${sc.name}`;
@@ -105,7 +107,7 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
     const columns: Column<Service>[] = [
         {
             key: 'name',
-            label: 'Service Name',
+            label: t('services.col_name'),
             sortable: true,
             render: (service) => (
                 <div>
@@ -120,7 +122,7 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
         },
         {
             key: 'category',
-            label: 'Category',
+            label: t('services.col_category'),
             render: (service) => (
                 <span className="text-sm text-muted-foreground">
                     {getCategoryDisplay(service)}
@@ -129,27 +131,27 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
         },
         {
             key: 'duration',
-            label: 'Duration',
+            label: t('services.col_duration'),
             sortable: true,
             render: (service) => (
                 <span className="text-sm text-foreground">
-                    {service.duration} min
+                    {service.duration} {t('services.minutes')}
                 </span>
             ),
         },
         {
             key: 'price',
-            label: 'Price',
+            label: t('services.col_price'),
             sortable: true,
             render: (service) => (
                 <span className="text-sm font-medium text-foreground">
-                    ${Number(service.price).toFixed(2)}
+                    RD${Number(service.price).toFixed(2)}
                 </span>
             ),
         },
         {
             key: 'is_active',
-            label: 'Status',
+            label: t('services.col_status'),
             render: (service) => (
                 <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -158,13 +160,13 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                             : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                     }`}
                 >
-                    {service.is_active ? 'Active' : 'Inactive'}
+                    {service.is_active ? t('services.active') : t('services.inactive')}
                 </span>
             ),
         },
         {
             key: 'actions',
-            label: 'Actions',
+            label: t('common.actions'),
             render: (service) => (
                 <div className="flex items-center gap-2">
                     <Button
@@ -190,10 +192,10 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
 
     return (
         <AppLayout
-            title="Services"
+            title={t('services.title')}
             breadcrumbs={[
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Services' },
+                { label: t('breadcrumbs.dashboard'), href: '/dashboard' },
+                { label: t('breadcrumbs.services') },
             ]}
         >
             <div className="space-y-6">
@@ -201,15 +203,12 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Services
+                            {t('services.title')}
                         </h1>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Manage your business services and offerings
-                        </p>
                     </div>
                     <Button onClick={() => router.visit('/services/create')}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Service
+                        {t('services.new')}
                     </Button>
                 </div>
 
@@ -218,7 +217,7 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            placeholder="Search services..."
+                            placeholder={t('services.search_placeholder')}
                             value={filters.search || ''}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="pl-9"
@@ -230,15 +229,15 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                         onValueChange={handleCategoryFilter}
                     >
                         <SelectTrigger className="w-full sm:w-[220px]">
-                            <SelectValue placeholder="All Categories" />
+                            <SelectValue placeholder={t('services.all_categories')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
+                            <SelectItem value="all">{t('services.all_categories')}</SelectItem>
                             {serviceCategories.map((parent) => (
                                 <SelectGroup key={parent.id}>
                                     <SelectLabel className="font-semibold">{parent.name}</SelectLabel>
                                     <SelectItem value={`parent:${parent.id}`}>
-                                        All {parent.name}
+                                        {t('common.all')} {parent.name}
                                     </SelectItem>
                                     {parent.children?.map((child) => (
                                         <SelectItem key={child.id} value={String(child.id)}>
@@ -255,12 +254,12 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                         onValueChange={handleStatusFilter}
                     >
                         <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="All Status" />
+                            <SelectValue placeholder={t('services.all_status')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="1">Active</SelectItem>
-                            <SelectItem value="0">Inactive</SelectItem>
+                            <SelectItem value="all">{t('services.all_status')}</SelectItem>
+                            <SelectItem value="1">{t('services.active')}</SelectItem>
+                            <SelectItem value="0">{t('services.inactive')}</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -272,7 +271,7 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                             className="w-full sm:w-auto"
                         >
                             <X className="mr-2 h-4 w-4" />
-                            Clear
+                            {t('common.clear_filters')}
                         </Button>
                     )}
                 </div>
@@ -299,16 +298,16 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                 ) : (
                     <EmptyState
                         icon={Briefcase}
-                        title="No services found"
+                        title={hasActiveFilters ? t('services.empty_title_filtered') : t('services.empty_title')}
                         description={
                             hasActiveFilters
-                                ? 'No services match your current filters. Try adjusting your search criteria.'
-                                : "You haven't created any services yet. Get started by adding your first service."
+                                ? t('empty_states.try_filters')
+                                : t('services.empty_description')
                         }
                         action={
                             !hasActiveFilters
                                 ? {
-                                      label: 'Add Service',
+                                      label: t('services.new'),
                                       onClick: () => router.visit('/services/create'),
                                   }
                                 : undefined
@@ -322,8 +321,8 @@ export default function ServicesIndex({ services, serviceCategories, filters }: 
                 open={deleteService !== null}
                 onClose={() => setDeleteService(null)}
                 onConfirm={handleDelete}
-                title="Delete Service"
-                description={`Are you sure you want to delete "${deleteService?.name}"? This action cannot be undone.`}
+                title={t('services.delete_title')}
+                description={t('services.delete_description', { name: deleteService?.name })}
                 variant="destructive"
             />
         </AppLayout>

@@ -7,6 +7,7 @@ namespace Tests\Feature\Api;
 use App\Models\Business;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -15,6 +16,7 @@ class AuthTest extends TestCase
 
     public function test_user_can_register_via_api(): void
     {
+        // Without invitation code in multi-business mode, user becomes a lead
         $response = $this->postJson('/api/v1/auth/register', [
             'name' => 'Test Client',
             'email' => 'client@example.com',
@@ -33,19 +35,52 @@ class AuthTest extends TestCase
                 'user' => [
                     'name' => 'Test Client',
                     'email' => 'client@example.com',
-                    'role' => 'client',
                     'business_id' => null,
                 ],
             ]);
 
         $this->assertDatabaseHas('users', [
             'email' => 'client@example.com',
-            'role' => 'client',
         ]);
     }
 
     public function test_user_can_register_with_invitation_code(): void
     {
+        // In multi-business mode (default), business_id on user stays null; pivot row is created
+        $business = Business::factory()->create([
+            'invitation_code' => 'TESTCODE',
+            'status' => 'active',
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name' => 'Test Client',
+            'email' => 'client@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'invitation_code' => 'TESTCODE',
+        ]);
+
+        $response->assertStatus(201);
+
+        $userId = $response->json('user.id');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $userId,
+            'email' => 'client@example.com',
+            'role' => 'client',
+        ]);
+
+        $this->assertDatabaseHas('user_business', [
+            'user_id' => $userId,
+            'business_id' => $business->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_user_can_register_with_invitation_code_legacy_mode(): void
+    {
+        Config::set('agendamax.client_multi_business', false);
+
         $business = Business::factory()->create([
             'invitation_code' => 'TESTCODE',
             'status' => 'active',
@@ -68,12 +103,17 @@ class AuthTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'client@example.com',
-            'business_id' => $business->id,
+            'primary_business_id' => $business->id,
         ]);
     }
 
     public function test_user_can_register_with_business_id(): void
     {
+        // business_id param only works in legacy mode; in multi-business mode it still works
+        // but business_id on user row stays null (pivot is created via invitation_code only).
+        // Test legacy mode behavior explicitly.
+        Config::set('agendamax.client_multi_business', false);
+
         $business = Business::factory()->create();
 
         $response = $this->postJson('/api/v1/auth/register', [
@@ -143,8 +183,10 @@ class AuthTest extends TestCase
             ->assertJsonValidationErrors(['invitation_code']);
     }
 
-    public function test_registration_allows_duplicate_email_across_businesses(): void
+    public function test_registration_allows_duplicate_email_across_businesses_in_legacy_mode(): void
     {
+        Config::set('agendamax.client_multi_business', false);
+
         $businessA = Business::factory()->create(['invitation_code' => 'CODEA']);
         $businessB = Business::factory()->create(['invitation_code' => 'CODEB']);
 
@@ -157,7 +199,7 @@ class AuthTest extends TestCase
             'invitation_code' => 'CODEA',
         ])->assertStatus(201);
 
-        // Register with business B (same email, different business)
+        // Register with business B (same email, different business) — allowed in legacy mode
         $this->postJson('/api/v1/auth/register', [
             'name' => 'User B',
             'email' => 'shared@example.com',
@@ -169,8 +211,34 @@ class AuthTest extends TestCase
         $this->assertDatabaseCount('users', 2);
     }
 
-    public function test_registration_rejects_duplicate_email_within_same_business(): void
+    public function test_registration_rejects_duplicate_email_in_multi_business_mode(): void
     {
+        // In multi-business mode, email is globally unique
+        $businessA = Business::factory()->create(['invitation_code' => 'CODEA']);
+        $businessB = Business::factory()->create(['invitation_code' => 'CODEB']);
+
+        $this->postJson('/api/v1/auth/register', [
+            'name' => 'User A',
+            'email' => 'shared@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'invitation_code' => 'CODEA',
+        ])->assertStatus(201);
+
+        $this->postJson('/api/v1/auth/register', [
+            'name' => 'User B',
+            'email' => 'shared@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'invitation_code' => 'CODEB',
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_registration_rejects_duplicate_email_within_same_business_in_legacy_mode(): void
+    {
+        Config::set('agendamax.client_multi_business', false);
+
         $business = Business::factory()->create(['invitation_code' => 'TESTCODE']);
 
         // First registration

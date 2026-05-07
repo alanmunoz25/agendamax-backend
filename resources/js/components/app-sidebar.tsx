@@ -17,9 +17,7 @@ import { dashboard } from '@/routes';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
-    BookOpen,
     Calendar,
-    Folder,
     LayoutGrid,
     Briefcase,
     FolderTree,
@@ -33,14 +31,16 @@ import {
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function useNavItems(): NavItem[] {
     const { permissions } = usePage<SharedData>().props;
+    const { t } = useTranslation();
 
     return useMemo(() => {
         const items: NavItem[] = [
             {
-                title: 'Dashboard',
+                title: t('nav.dashboard'),
                 href: dashboard(),
                 icon: LayoutGrid,
             },
@@ -48,7 +48,7 @@ function useNavItems(): NavItem[] {
 
         if (permissions.can_manage_businesses) {
             items.push({
-                title: 'Businesses',
+                title: t('nav.businesses'),
                 href: '/businesses',
                 icon: Building2,
             });
@@ -56,7 +56,7 @@ function useNavItems(): NavItem[] {
 
         if (permissions.can_manage_users) {
             items.push({
-                title: 'Users',
+                title: t('nav.users'),
                 href: '/users',
                 icon: Shield,
             });
@@ -65,7 +65,7 @@ function useNavItems(): NavItem[] {
         // Appointments: visible to business_admin, employee, and client
         if (permissions.is_business_admin || permissions.is_employee || permissions.is_client) {
             items.push({
-                title: 'Appointments',
+                title: t('nav.appointments'),
                 href: '/appointments',
                 icon: Calendar,
             });
@@ -74,7 +74,7 @@ function useNavItems(): NavItem[] {
         // Clients: visible to business_admin and employee
         if (permissions.is_business_admin || permissions.is_employee) {
             items.push({
-                title: 'Clients',
+                title: t('nav.clients'),
                 href: '/clients',
                 icon: Users,
             });
@@ -84,37 +84,37 @@ function useNavItems(): NavItem[] {
         if (permissions.is_business_admin) {
             items.push(
                 {
-                    title: 'Employees',
+                    title: t('nav.employees'),
                     href: '/employees',
                     icon: UserCog,
                 },
                 {
-                    title: 'Services',
+                    title: t('nav.services'),
                     href: '/services',
                     icon: Briefcase,
                 },
                 {
-                    title: 'Cursos',
+                    title: t('nav.courses'),
                     href: '/courses',
                     icon: GraduationCap,
                 },
                 {
-                    title: 'Categories',
+                    title: t('nav.categories'),
                     href: '/service-categories',
                     icon: FolderTree,
                 },
                 {
-                    title: 'Promotions',
+                    title: t('nav.promotions'),
                     href: '/promotions',
                     icon: Megaphone,
                 },
                 {
-                    title: 'Business',
+                    title: t('nav.business'),
                     href: '/business',
                     icon: Building2,
                 },
                 {
-                    title: 'QR Codes',
+                    title: t('nav.qr_codes'),
                     href: '/qr-codes',
                     icon: QrCodeIcon,
                 },
@@ -122,25 +122,15 @@ function useNavItems(): NavItem[] {
         }
 
         return items;
-    }, [permissions]);
+    }, [permissions, t]);
 }
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
 
 export function AppSidebar() {
     const navItems = useNavItems();
     const { permissions } = usePage<SharedData>().props;
+    const { t } = useTranslation();
+
+    const footerNavItems: NavItem[] = [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">

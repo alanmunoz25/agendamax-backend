@@ -9,7 +9,6 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ServicePriceListSeeder extends Seeder
 {
@@ -283,5 +282,4 @@ class ServicePriceListSeeder extends Seeder
             $text
         );
     }
-
 }
